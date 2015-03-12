@@ -1,2 +1,3 @@
-# atoz
-Documentation generator for API-structured code.
+Atoz - Not A to Z.
+
+http://en.memory-alpha.org/wiki/Atoz
