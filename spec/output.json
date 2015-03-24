@@ -1,0 +1,140 @@
+{
+	"actions": [
+		{
+			"name": "Test",
+			"ref": "/App/Test",
+			"uri": "/Api/Test",
+			"description": "My test API end-point.",
+			"parameters": [
+
+			],
+			"returnSuccess": [
+
+			],
+			"returnError": [
+				{
+					"name": "error",
+					"type": "string",
+					"limit": 0,
+					"description": "An error message detailing why the request failed"
+				}
+			]
+		},
+		{
+			"name": "Hello World",
+			"ref": "/App/Hello",
+			"uri": "/Api/Hello",
+			"description": "A simple API call that returns user input.",
+			"parameters": [
+				{
+					"name": "username",
+					"type": "string",
+					"limit": 255,
+					"description": "The name of the user to echo back. (Required)"
+				}
+			],
+			"returnError": [
+				{
+					"name": "error",
+					"type": "string",
+					"limit": 0,
+					"description": "An error message detailing why the request failed"
+				}
+			],
+			"returnSuccess": [
+				{
+					"name": "message",
+					"type": "string",
+					"limit": 0,
+					"description": "A greeting message for the user."
+				}
+			]
+		},
+		{
+			"name": "Create User",
+			"ref": "/App/User/Create",
+			"uri": "/Api/User/Create",
+			"description": "Create a new user.",
+			"parameters": [
+				{
+					"name": "name",
+					"type": "string",
+					"limit": 255,
+					"description": "The name (or nickname) of the user."
+				},
+				{
+					"name": "email",
+					"type": "string",
+					"limit": 254,
+					"description": "The email address for the user.  Will be validated and set to their primary email address."
+				},
+				{
+					"name": "password",
+					"type": "string",
+					"limit": 0,
+					"description": "The password for this account."
+				}
+			],
+			"returnError": [
+				{
+					"name": "error",
+					"type": "string",
+					"limit": 0,
+					"description": "An error message detailing why the request failed"
+				}
+			],
+			"returnSuccess": [
+				{
+					"name": "user",
+					"type": "#/App/User#",
+					"description": "The new user."
+				}
+			]
+		}
+	],
+	"objects": [
+		{
+			"name": "User",
+			"ref": "/App/User",
+			"description": "A user account for the application.",
+			"properties": [
+				{
+					"name": "id",
+					"type": "integer",
+					"limit": 0,
+					"description": "The unique ID for the user."
+				},
+				{
+					"name": "name",
+					"type": "string",
+					"limit": 255,
+					"description": "The name (or nickname) of the user."
+				},
+				{
+					"name": "emails",
+					"type": "array",
+					"limit": 100,
+					"description": "Email addresses stored for the user.",
+					"children": [
+						{
+							"name": "email",
+							"type": "string",
+							"limit": 254,
+							"description": "The email address."
+						},
+						{
+							"name": "primary",
+							"type": "boolean",
+							"description": "Flag describing whether this is the primary email address for the user."
+						},
+						{
+							"name": "validated",
+							"type": "boolean",
+							"description": "Flag describing whether or not this address has been validated."
+						}
+					]
+				}
+			]
+		}
+	]
+}

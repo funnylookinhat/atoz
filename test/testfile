@@ -1,0 +1,40 @@
+
+/**
+ * ---ATOZDEF---
+ * @ref /Defs/Authorization
+ * @parameter {Object} auth 
+ * @parameter {Integer} auth.id 
+ * @parameter {String,64} auth.key 
+ * ---ATOZEND---
+ */
+
+/**
+ * ---ATOZDEF---
+ * @name /Defs/BaseResult
+ * @success {Boolean} success A boolean to show whether or not the request was successful.
+ * @error {String} error An error message describing what went wrong.
+ */
+
+/**
+ * ---ATOZAPI---
+ * @name User Lookup
+ * @ref /MyApp/User/Lookup
+ * @uri /User/Lookup
+ * @description Get the information for a user.
+ * @include /Defs/Authorization
+ * @parameter {Integer} id The ID of the user.
+ * @include /Defs/BaseResult
+ * @success {#/Application/User#} user
+ * ---ATOZEND---
+ */
+
+/**
+ * ---ATOZOBJ---
+ * @name User
+ * @ref /Application/User
+ * @description A user in the application.
+ * @property id INTEGER Unique ID of the user.
+ * @property name STRING Name of the user.
+ * @property email STRING Email address for the user.
+ * ---ATOZEND---
+ */
