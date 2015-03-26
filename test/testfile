@@ -1,4 +1,11 @@
 
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+
 /**
  * ---ATOZDEF---
  * @ref /Defs/Authorization
@@ -8,12 +15,26 @@
  * ---ATOZEND---
  */
 
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+
 /**
  * ---ATOZDEF---
  * @name /Defs/BaseResult
  * @success {Boolean} success A boolean to show whether or not the request was successful.
  * @error {String} error An error message describing what went wrong.
  */
+
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
 
 /**
  * ---ATOZAPI---
@@ -28,6 +49,13 @@
  * ---ATOZEND---
  */
 
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+
 /**
  * ---ATOZOBJ---
  * @name User
@@ -38,3 +66,10 @@
  * @property email STRING Email address for the user.
  * ---ATOZEND---
  */
+
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}

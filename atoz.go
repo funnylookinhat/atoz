@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 type Definition struct {
@@ -39,7 +41,7 @@ type KeyValue struct {
 const (
 	startDefinition = "---ATOZDEF---"
 	startAction     = "---ATOZAPI---"
-	startObject     = "---ATOZAPI---"
+	startObject     = "---ATOZOBJ---"
 	endDefinition   = "---ATOZEND---"
 )
 
@@ -47,7 +49,10 @@ func GetLineType(line string) (string, error) {
 	return "", nil
 }
 
-func ParseType(line string) (string, error) {
+// Receive
+// @name Something something
+// Return "name"
+func ParseLineType(line string) (string, error) {
 	var lineTypes = map[string]bool{
 		"@name":        true,
 		"@ref":         true,
@@ -90,7 +95,7 @@ func ParseType(line string) (string, error) {
 // Receive
 // @name Some string value
 // Return Value
-func ParseString(line string) (string, error) {
+func ParseLineString(line string) (string, error) {
 	var returnValue string
 
 	atIndex := strings.Index(line, "@")
@@ -119,7 +124,7 @@ func ParseString(line string) (string, error) {
 // Receive
 // @returns {Type,Limit} Objectspace Description
 // Return Type, Limit, Objectspace, Description
-func ParseKeyValue(line string) (string, int64, string, string, error) {
+func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 	lineTypeLimits := map[string]bool{
 		"boolean": false,
 		"integer": false,
@@ -201,4 +206,54 @@ func ParseKeyValue(line string) (string, int64, string, string, error) {
 	returnDescription = strings.Join(lineParts[3:], " ")
 
 	return returnType, returnLimit, returnObjectspace, returnDescription, nil
+}
+
+func ParseGroups(r *bufio.Reader) ([][]string, error) {
+	groups := make([][]string, 0)
+
+	scanner := bufio.NewScanner(r)
+
+	var line string
+	group := make([]string, 0)
+
+	for scanner.Scan() {
+		line = scanner.Text()
+
+		if !utf8.ValidString(line) {
+			return make([][]string, 0), nil
+		}
+
+		if strings.Contains(line, startDefinition) ||
+			strings.Contains(line, startAction) ||
+			strings.Contains(line, startObject) {
+			group = append(group, line)
+		} else if strings.Contains(line, endDefinition) {
+			group = append(group, line)
+			groups = append(groups, group)
+			group = make([]string, 0)
+		} else if len(group) > 0 {
+			group = append(group, line)
+		}
+	}
+
+	if len(group) > 0 {
+		return nil, fmt.Errorf("Unclosed definition found.")
+	}
+
+	return groups, nil
+}
+
+func ParseGroupType(line string) (string, error) {
+	if strings.Contains(line, startDefinition) {
+		return "definition", nil
+	}
+	if strings.Contains(line, startAction) {
+		return "action", nil
+	}
+	if strings.Contains(line, startObject) {
+		return "object", nil
+	}
+
+	return "", fmt.Errorf("Invalid line: no starting group identifier found.")
+
 }

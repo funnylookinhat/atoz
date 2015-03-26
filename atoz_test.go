@@ -1,38 +1,29 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
+	"reflect"
 	"testing"
 )
 
 /**
  * List Files
  * Get Groupings
- * Parse all Definitions First
- * Parse all Objects
- * Parse all Actions
- * Get Line Type
- * Parse String
- * Parse KeyValue
- * Merge KeyValue
+ * Parse all Groups ( Definitions, then Objects, then Actions )
+ * 		Get Line Type
+ *   	Parse String
+ *    	Parse KeyValue
+ *     	Merge KeyValue
  */
 
-/*
-func TestGetLineType(t *testing.T) {
-	t.Errorf("TestGetLineType: Not built yet.")
-}
-
-func TestParseString(t *testing.T) {
-	t.Errorf("TestParseString: Not built yet.")
-}
-*/
-
-type testParseTypeCase struct {
+type testParseLineTypeCase struct {
 	line     string
 	lineType string
 	err      bool
 }
 
-var testParseTypeCases = []testParseTypeCase{
+var testParseLineTypeCases = []testParseLineTypeCase{
 	{
 		"@name Namespace",
 		"name",
@@ -90,38 +81,38 @@ var testParseTypeCases = []testParseTypeCase{
 	},
 }
 
-func TestParseType(t *testing.T) {
+func TestParseLineType(t *testing.T) {
 	var resultLineType string
 	var resultErr error
 
-	for _, test := range testParseTypeCases {
-		resultLineType, resultErr = ParseType(test.line)
+	for _, test := range testParseLineTypeCases {
+		resultLineType, resultErr = ParseLineType(test.line)
 
 		if resultErr != nil {
 			if !test.err {
-				t.Errorf("TestParseType Unexpected error: %s", resultErr)
+				t.Errorf("TestParseLineType Unexpected error: %s", resultErr)
 				return
 			}
 		} else {
 			if test.err {
-				t.Errorf("TestParseType - Should have errored out: %s", test.line)
+				t.Errorf("TestParseLineType - Should have errored out: %s", test.line)
 				return
 			}
 			if resultLineType != test.lineType {
-				t.Errorf("TestParseType Line Value Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineType, resultLineType)
+				t.Errorf("TestParseLineType Line Value Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineType, resultLineType)
 				return
 			}
 		}
 	}
 }
 
-type testParseStringCase struct {
+type testParseLineStringCase struct {
 	line      string
 	lineValue string
 	err       bool
 }
 
-var testParseStringCases = []testParseStringCase{
+var testParseLineStringCases = []testParseLineStringCase{
 	{
 		"@ref /Defs/Authorization",
 		"/Defs/Authorization",
@@ -159,32 +150,32 @@ var testParseStringCases = []testParseStringCase{
 	},
 }
 
-func TestParseString(t *testing.T) {
+func TestParseLineString(t *testing.T) {
 	var resultLineValue string
 	var resultErr error
 
-	for _, test := range testParseStringCases {
-		resultLineValue, resultErr = ParseString(test.line)
+	for _, test := range testParseLineStringCases {
+		resultLineValue, resultErr = ParseLineString(test.line)
 
 		if resultErr != nil {
 			if !test.err {
-				t.Errorf("TestParseString Unexpected error: %s", resultErr)
+				t.Errorf("TestParseLineString Unexpected error: %s", resultErr)
 				return
 			}
 		} else {
 			if test.err {
-				t.Errorf("TestParseString - Should have errored out: %s", test.line)
+				t.Errorf("TestParseLineString - Should have errored out: %s", test.line)
 				return
 			}
 			if resultLineValue != test.lineValue {
-				t.Errorf("TestParseString Line Value Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineValue, resultLineValue)
+				t.Errorf("TestParseLineString Line Value Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineValue, resultLineValue)
 				return
 			}
 		}
 	}
 }
 
-type testParseKeyValueCase struct {
+type testParseLineKeyValueCase struct {
 	line            string
 	lineType        string
 	lineLimit       int64
@@ -193,7 +184,7 @@ type testParseKeyValueCase struct {
 	err             bool
 }
 
-var testParseKeyValueCases = []testParseKeyValueCase{
+var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	// Integer
 	{
 		"@required {Integer} Some.Integer This is an integer.",
@@ -340,43 +331,277 @@ var testParseKeyValueCases = []testParseKeyValueCase{
 	},
 }
 
-func TestParseKeyValue(t *testing.T) {
+func TestParseLineKeyValue(t *testing.T) {
 	var resultLineType string
 	var resultLineLimit int64
 	var resultLineObjectspace string
 	var resultLineDescription string
 	var resultErr error
 
-	for _, test := range testParseKeyValueCases {
-		resultLineType, resultLineLimit, resultLineObjectspace, resultLineDescription, resultErr = ParseKeyValue(test.line)
+	for _, test := range testParseLineKeyValueCases {
+		resultLineType, resultLineLimit, resultLineObjectspace, resultLineDescription, resultErr = ParseLineKeyValue(test.line)
 
 		if resultErr != nil {
 			if !test.err {
-				t.Errorf("TestParseKeyValue Unexpected error: %s", resultErr)
+				t.Errorf("TestParseLineKeyValue Unexpected error: %s", resultErr)
 				return
 			}
 		} else {
 			if test.err {
-				t.Errorf("TestParseKeyValue - Should have errored out: %s", test.line)
+				t.Errorf("TestParseLineKeyValue - Should have errored out: %s", test.line)
 				return
 			}
 			if resultLineType != test.lineType {
-				t.Errorf("TestParseKeyValue Line Type Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineType, resultLineType)
+				t.Errorf("TestParseLineKeyValue Line Type Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineType, resultLineType)
 				return
 			}
 			if resultLineLimit != test.lineLimit {
-				t.Errorf("TestParseKeyValue Line Limit Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineLimit, resultLineLimit)
+				t.Errorf("TestParseLineKeyValue Line Limit Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineLimit, resultLineLimit)
 				return
 			}
 			if resultLineObjectspace != test.lineObjectspace {
-				t.Errorf("TestParseKeyValue Line Objectspace Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineObjectspace, resultLineObjectspace)
+				t.Errorf("TestParseLineKeyValue Line Objectspace Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineObjectspace, resultLineObjectspace)
 				return
 			}
 			if resultLineDescription != test.lineDescription {
-				t.Errorf("TestParseKeyValue Line Description Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineDescription, resultLineDescription)
+				t.Errorf("TestParseLineKeyValue Line Description Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineDescription, resultLineDescription)
 				return
 			}
 		}
 
+	}
+}
+
+type testParseGroupsCase struct {
+	lines  string
+	groups [][]string
+	err    bool
+}
+
+var testParseGroupsCases = []testParseGroupsCase{
+	{
+		`
+
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+
+/**
+ * ---ATOZDEF---
+ * @ref /Defs/Authorization
+ * @parameter {Object} auth 
+ * @parameter {Integer} auth.id 
+ * @parameter {String,64} auth.key 
+ * ---ATOZEND---
+ */
+
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+
+/**
+ * ---ATOZDEF---
+ * @name /Defs/BaseResult
+ * @success {Boolean} success A boolean to show whether or not the request was successful.
+ * @error {String} error An error message describing what went wrong.
+ * ---ATOZEND---
+ */
+
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+
+/**
+ * ---ATOZAPI---
+ * @name User Lookup
+ * @ref /MyApp/User/Lookup
+ * @uri /User/Lookup
+ * @description Get the information for a user.
+ * @include /Defs/Authorization
+ * @parameter {Integer} id The ID of the user.
+ * @include /Defs/BaseResult
+ * @success {#/Application/User#} user
+ * ---ATOZEND---
+ */
+
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+
+/**
+ * ---ATOZOBJ---
+ * @name User
+ * @ref /Application/User
+ * @description A user in the application.
+ * @property id INTEGER Unique ID of the user.
+ * @property name STRING Name of the user.
+ * @property email STRING Email address for the user.
+ * ---ATOZEND---
+ */
+
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+		`,
+		[][]string{
+			{
+				" * ---ATOZDEF---",
+				" * @ref /Defs/Authorization",
+				" * @parameter {Object} auth ",
+				" * @parameter {Integer} auth.id ",
+				" * @parameter {String,64} auth.key ",
+				" * ---ATOZEND---",
+			},
+			{
+				" * ---ATOZDEF---",
+				" * @name /Defs/BaseResult",
+				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
+				" * @error {String} error An error message describing what went wrong.",
+				" * ---ATOZEND---",
+			},
+			{
+				" * ---ATOZAPI---",
+				" * @name User Lookup",
+				" * @ref /MyApp/User/Lookup",
+				" * @uri /User/Lookup",
+				" * @description Get the information for a user.",
+				" * @include /Defs/Authorization",
+				" * @parameter {Integer} id The ID of the user.",
+				" * @include /Defs/BaseResult",
+				" * @success {#/Application/User#} user",
+				" * ---ATOZEND---",
+			},
+			{
+				" * ---ATOZOBJ---",
+				" * @name User",
+				" * @ref /Application/User",
+				" * @description A user in the application.",
+				" * @property id INTEGER Unique ID of the user.",
+				" * @property name STRING Name of the user.",
+				" * @property email STRING Email address for the user.",
+				" * ---ATOZEND---",
+			},
+		},
+		false,
+	},
+	{
+		`
+
+#include <stdio.h>
+ 
+int main(void)
+{
+    printf("hello, world\n");
+}
+
+/**
+ * ---ATOZDEF---
+ * @ref /Defs/Authorization
+ * @parameter {Object} auth 
+ * @parameter {Integer} auth.id 
+ * @parameter {String,64} auth.key 
+ */
+		`,
+		[][]string{
+			{},
+		},
+		true,
+	},
+}
+
+func TestParseGroups(t *testing.T) {
+	var resultLineGroups [][]string
+	var resultErr error
+
+	for _, test := range testParseGroupsCases {
+		buffer := bytes.NewBufferString(test.lines)
+		reader := bufio.NewReader(buffer)
+		resultLineGroups, resultErr = ParseGroups(reader)
+
+		if resultErr != nil {
+			if !test.err {
+				t.Errorf("TestParseGroups Unexpected error: %s", resultErr)
+				return
+			}
+		} else {
+			for i, _ := range test.groups {
+				if !reflect.DeepEqual(test.groups[i], resultLineGroups[i]) {
+					t.Errorf("TestParseGroups Groups Mismatch:")
+					t.Errorf("Expected:")
+					for _, line := range test.groups[i] {
+						t.Errorf("\t%s", line)
+					}
+					t.Errorf("Actual:")
+					for _, line := range resultLineGroups[i] {
+						t.Errorf("\t%s", line)
+					}
+				}
+			}
+		}
+	}
+}
+
+type testParseGroupTypeCase struct {
+	line      string
+	groupType string
+	err       bool
+}
+
+var testParseGroupTypeCases = []testParseGroupTypeCase{
+	{
+		" * ---ATOZDEF---",
+		"definition",
+		false,
+	},
+	{
+		" * ---ATOZAPI---",
+		"action",
+		false,
+	},
+	{
+		" * ---ATOZOBJ---",
+		"object",
+		false,
+	},
+	{
+		" * ---ATOZEND---",
+		"",
+		true,
+	},
+}
+
+func TestParseGroupType(t *testing.T) {
+	var resultGroupType string
+	var resultErr error
+
+	for _, test := range testParseGroupTypeCases {
+		resultGroupType, resultErr = ParseGroupType(test.line)
+
+		if resultErr != nil {
+			if !test.err {
+				t.Errorf("TestParseGroupType Unexpected error: %s", resultErr)
+				return
+			}
+		} else {
+			if test.groupType != resultGroupType {
+				t.Errorf("TestParseGroupType Group Type Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.groupType, resultGroupType)
+				return
+			}
+		}
 	}
 }
