@@ -33,7 +33,7 @@ type Object struct {
 type KeyValue struct {
 	Name        string     `json:"name"`
 	Type        string     `json:"type"`
-	Limit       int        `json:"limit"`
+	Limit       int64      `json:"limit"`
 	Description string     `json:"description"`
 	Children    []KeyValue `json:"children"`
 }
@@ -65,6 +65,7 @@ func ParseLineType(line string) (string, error) {
 		"@return":      true,
 		"@success":     true,
 		"@failure":     true,
+		"@property":    true,
 	}
 
 	var returnValue string
@@ -256,4 +257,92 @@ func ParseGroupType(line string) (string, error) {
 
 	return "", fmt.Errorf("Invalid line: no starting group identifier found.")
 
+}
+
+func GenerateDefinition(lines []string) (Definition, error) {
+	return Definition{}, nil
+}
+
+func GenerateObject(lines []string, definitions map[string]Definition) (Object, error) {
+	return Object{}, nil
+}
+
+func GenerateAction(lines []string, definitions map[string]Definition) (Action, error) {
+	return Action{}, nil
+}
+
+func GenerateKeyValues(keyValueType string, lines []string, objectspace string) ([]KeyValue, error) {
+	keyValues := make([]KeyValue, 0)
+
+	// Unpacking each line each iteration will be a bit more inefficient,
+	// but should provide a nice proof-of-concept
+	var lineKeyValueType string
+	var lineKeyValueLimit int64
+	var lineKeyValueObjectspace string
+	var lineKeyValueDescription string
+	var lineKeyValueError error
+
+	var lineType string
+	var lineTypeError error
+
+	var lineKeyValue KeyValue
+
+	for _, line := range lines {
+		if !strings.Contains(line, startDefinition) &&
+			!strings.Contains(line, startAction) &&
+			!strings.Contains(line, startObject) &&
+			!strings.Contains(line, endDefinition) {
+
+			lineType, lineTypeError = ParseLineType(line)
+
+			if lineTypeError != nil {
+				return make([]KeyValue, 0), lineTypeError
+			}
+
+			if lineType == keyValueType {
+
+				lineKeyValueType, lineKeyValueLimit, lineKeyValueObjectspace, lineKeyValueDescription, lineKeyValueError = ParseLineKeyValue(line)
+
+				if lineKeyValueError != nil {
+					return keyValues, lineKeyValueError
+				}
+
+				if strings.Contains(lineKeyValueObjectspace, objectspace) &&
+					strings.Index(strings.Replace(lineKeyValueObjectspace, objectspace, "", 1), ".") < 0 {
+					lineKeyValue = KeyValue{
+						strings.Replace(lineKeyValueObjectspace, objectspace, "", 1),
+						lineKeyValueType,
+						lineKeyValueLimit,
+						lineKeyValueDescription,
+						make([]KeyValue, 0),
+					}
+
+					lineKeyValue.Children, lineKeyValueError = GenerateKeyValues(keyValueType, lines, lineKeyValueObjectspace+".")
+
+					if lineKeyValueError != nil {
+						return make([]KeyValue, 0), lineKeyValueError
+					}
+
+					keyValues = append(keyValues, lineKeyValue)
+				}
+
+			}
+		}
+	}
+
+	return keyValues, nil
+
+	// Loop all lines
+	// If in objectspace - add to KeyValue
+	// -- Check for children by checking objectspace of each key and append their children
+	// return
+	//
+	// ""
+	// "auth."
+	// "auth.user"
+	// "auth.user.email"
+	// "auth.user.password"
+	// "auth.token"
+	// "auth.token.key"
+	// "auth.token.secret"
 }

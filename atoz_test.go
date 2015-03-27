@@ -605,3 +605,226 @@ func TestParseGroupType(t *testing.T) {
 		}
 	}
 }
+
+type testGenerateKeyValuesCase struct {
+	keyValueType    string
+	definition      string
+	resultKeyValues [][]KeyValue
+	resultErr       bool
+}
+
+var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
+	{
+		"property",
+		`
+/**
+ * ---ATOZOBJ---
+ * @name User
+ * @ref /Application/User
+ * @description A user in the application.
+ * @property {Integer} id Unique ID of the user.
+ * @property {String} name Name of the user.
+ * @property {String} email Email address for the user.
+ * ---ATOZEND---
+ */
+		`,
+		[][]KeyValue{
+			[]KeyValue{
+				{
+					"id",
+					"integer",
+					-1,
+					"Unique ID of the user.",
+					[]KeyValue{},
+				},
+				{
+					"name",
+					"string",
+					0,
+					"Name of the user.",
+					[]KeyValue{},
+				},
+				{
+					"email",
+					"string",
+					0,
+					"Email address for the user.",
+					[]KeyValue{},
+				},
+			},
+		},
+		false,
+	},
+	{
+		"property",
+		`
+/**
+ * ---ATOZOBJ---
+ * @name User
+ * @ref /Application/User
+ * @description A user in the application.
+ * @property {Object} user The user.
+ * @property {Integer} user.id Unique ID of the user.
+ * @property {String} user.name Name of the user.
+ * @property {String} user.email Email address for the user.
+ * @property {String} user.role The role of the user.
+ * ---ATOZEND---
+ */
+		`,
+		[][]KeyValue{
+			[]KeyValue{
+				KeyValue{
+					"user",
+					"object",
+					-1,
+					"The user.",
+					[]KeyValue{
+						KeyValue{
+							"id",
+							"integer",
+							-1,
+							"Unique ID of the user.",
+							[]KeyValue{},
+						},
+						KeyValue{
+							"name",
+							"string",
+							0,
+							"Name of the user.",
+							[]KeyValue{},
+						},
+						KeyValue{
+							"email",
+							"string",
+							0,
+							"Email address for the user.",
+							[]KeyValue{},
+						},
+						KeyValue{
+							"role",
+							"string",
+							0,
+							"The role of the user.",
+							[]KeyValue{},
+						},
+					},
+				},
+			},
+		},
+		false,
+	},
+	{
+		"required",
+		`
+/**
+ * ---ATOZDEF---
+ * @ref /Application/Auth
+ * @required {Object} auth Auth object.
+ * @required {Object} auth.user User object.
+ * @required {Integer} auth.user.id User ID.
+ * @required {String} auth.user.name First and last ( or common ) name.
+ * @required {String} auth.user.email Email address.
+ * @required {Object} auth.token Token object.
+ * @required {String} auth.token.key Token key.
+ * @required {String} auth.token.secret Token secret.
+ * ---ATOZEND---
+ */
+		`,
+		[][]KeyValue{
+			[]KeyValue{
+				KeyValue{
+					"auth",
+					"object",
+					-1,
+					"Auth object.",
+					[]KeyValue{
+						KeyValue{
+							"user",
+							"object",
+							-1,
+							"User object.",
+							[]KeyValue{
+								KeyValue{
+									"id",
+									"integer",
+									-1,
+									"User ID.",
+									[]KeyValue{},
+								},
+								KeyValue{
+									"name",
+									"string",
+									0,
+									"First and last ( or common ) name.",
+									[]KeyValue{},
+								},
+								KeyValue{
+									"email",
+									"string",
+									0,
+									"Email address.",
+									[]KeyValue{},
+								},
+							},
+						},
+						KeyValue{
+							"token",
+							"object",
+							-1,
+							"Token object.",
+							[]KeyValue{
+								KeyValue{
+									"key",
+									"string",
+									0,
+									"Token key.",
+									[]KeyValue{},
+								},
+								KeyValue{
+									"secret",
+									"string",
+									0,
+									"Token secret.",
+									[]KeyValue{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		false,
+	},
+}
+
+func TestGenerateKeyValues(t *testing.T) {
+	var resultKeyValues []KeyValue
+	var resultGroups [][]string
+	var resultErr error
+
+	for _, test := range testGenerateKeyValuesCases {
+
+		buffer := bytes.NewBufferString(test.definition)
+		reader := bufio.NewReader(buffer)
+		resultGroups, resultErr = ParseGroups(reader)
+
+		if resultErr != nil {
+			t.Errorf("Unexpected Error: Error parsing group definitions: %s", resultErr)
+			return
+		}
+
+		for i, _ := range resultGroups {
+			resultKeyValues, resultErr = GenerateKeyValues(test.keyValueType, resultGroups[i], "")
+
+			if resultErr != nil {
+				t.Errorf("Error generating keyvalues: %s", resultErr)
+				return
+			}
+
+			if !reflect.DeepEqual(test.resultKeyValues[i], resultKeyValues) {
+				t.Errorf("TestParseGroupType Group Type Mismatch: \n%s\nExpected: %s\n  Actual: %s", test.definition, test.resultKeyValues[i], resultKeyValues)
+				return
+			}
+		}
+	}
+}
