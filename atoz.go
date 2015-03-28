@@ -8,30 +8,32 @@ import (
 	"unicode/utf8"
 )
 
+/*
 type Definition struct {
 	Ref      string     `json:"ref"`
 	Children []KeyValue `json:"children:"`
 }
+*/
 
 type Action struct {
-	Name              string     `json:"name"`
-	Ref               string     `json:"ref"`
-	Uri               string     `json:"uri"`
-	Description       string     `json:"description"`
-	ParameterChildren []KeyValue `json:"parameters"`
-	SuccessChildren   []KeyValue `json:"returnSuccess"`
-	ErrorChildren     []KeyValue `json:"returnError"`
+	Name        string     `json:"name"`
+	Ref         string     `json:"ref"`
+	Uri         string     `json:"uri"`
+	Description string     `json:"description"`
+	Parameters  []KeyValue `json:"parameters"`
+	Returns     []KeyValue `json:"returns"`
 }
 
 type Object struct {
 	Name        string     `json:"name"`
 	Ref         string     `json:"ref"`
 	Description string     `json:"description"`
-	Children    []KeyValue `json:"children"`
+	Properties  []KeyValue `json:"properties"`
 }
 
 type KeyValue struct {
 	Name        string     `json:"name"`
+	Flag        string     `json:"name"`
 	Type        string     `json:"type"`
 	Limit       int64      `json:"limit"`
 	Description string     `json:"description"`
@@ -259,9 +261,11 @@ func ParseGroupType(line string) (string, error) {
 
 }
 
+/*
 func GenerateDefinition(lines []string) (Definition, error) {
 	return Definition{}, nil
 }
+*/
 
 func GenerateObject(lines []string, definitions map[string]Definition) (Object, error) {
 	return Object{}, nil
@@ -285,6 +289,9 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 	var lineType string
 	var lineTypeError error
 
+	var lineFlag string
+	// var lineFlagError error
+
 	var lineKeyValue KeyValue
 
 	for _, line := range lines {
@@ -294,6 +301,9 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 			!strings.Contains(line, endDefinition) {
 
 			lineType, lineTypeError = ParseLineType(line)
+
+			lineFlag = ""
+			// lineFlagError = nil
 
 			if lineTypeError != nil {
 				return make([]KeyValue, 0), lineTypeError
@@ -311,6 +321,7 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 					strings.Index(strings.Replace(lineKeyValueObjectspace, objectspace, "", 1), ".") < 0 {
 					lineKeyValue = KeyValue{
 						strings.Replace(lineKeyValueObjectspace, objectspace, "", 1),
+						lineFlag,
 						lineKeyValueType,
 						lineKeyValueLimit,
 						lineKeyValueDescription,
@@ -331,18 +342,4 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 	}
 
 	return keyValues, nil
-
-	// Loop all lines
-	// If in objectspace - add to KeyValue
-	// -- Check for children by checking objectspace of each key and append their children
-	// return
-	//
-	// ""
-	// "auth."
-	// "auth.user"
-	// "auth.user.email"
-	// "auth.user.password"
-	// "auth.token"
-	// "auth.token.key"
-	// "auth.token.secret"
 }

@@ -632,6 +632,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 			[]KeyValue{
 				{
 					"id",
+					"",
 					"integer",
 					-1,
 					"Unique ID of the user.",
@@ -639,6 +640,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 				},
 				{
 					"name",
+					"",
 					"string",
 					0,
 					"Name of the user.",
@@ -646,6 +648,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 				},
 				{
 					"email",
+					"",
 					"string",
 					0,
 					"Email address for the user.",
@@ -675,12 +678,14 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 			[]KeyValue{
 				KeyValue{
 					"user",
+					"",
 					"object",
 					-1,
 					"The user.",
 					[]KeyValue{
 						KeyValue{
 							"id",
+							"",
 							"integer",
 							-1,
 							"Unique ID of the user.",
@@ -688,6 +693,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 						},
 						KeyValue{
 							"name",
+							"",
 							"string",
 							0,
 							"Name of the user.",
@@ -695,6 +701,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 						},
 						KeyValue{
 							"email",
+							"",
 							"string",
 							0,
 							"Email address for the user.",
@@ -702,6 +709,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 						},
 						KeyValue{
 							"role",
+							"",
 							"string",
 							0,
 							"The role of the user.",
@@ -734,18 +742,21 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 			[]KeyValue{
 				KeyValue{
 					"auth",
+					"",
 					"object",
 					-1,
 					"Auth object.",
 					[]KeyValue{
 						KeyValue{
 							"user",
+							"",
 							"object",
 							-1,
 							"User object.",
 							[]KeyValue{
 								KeyValue{
 									"id",
+									"",
 									"integer",
 									-1,
 									"User ID.",
@@ -753,6 +764,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 								},
 								KeyValue{
 									"name",
+									"",
 									"string",
 									0,
 									"First and last ( or common ) name.",
@@ -760,6 +772,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 								},
 								KeyValue{
 									"email",
+									"",
 									"string",
 									0,
 									"Email address.",
@@ -769,12 +782,14 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 						},
 						KeyValue{
 							"token",
+							"",
 							"object",
 							-1,
 							"Token object.",
 							[]KeyValue{
 								KeyValue{
 									"key",
+									"",
 									"string",
 									0,
 									"Token key.",
@@ -782,6 +797,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 								},
 								KeyValue{
 									"secret",
+									"",
 									"string",
 									0,
 									"Token secret.",
@@ -790,6 +806,42 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 							},
 						},
 					},
+				},
+			},
+		},
+		false,
+	},
+	{
+		"required",
+		`
+/**
+ * ---ATOZOBJ---
+ * @name User
+ * @ref /Application/User
+ * @description A user in the application.
+ * @required {Integer} id Unique ID of the user.
+ * @required {String} name Name of the user.
+ * @required {String} user.email Email address for the user.
+ * ---ATOZEND---
+ */
+		`,
+		[][]KeyValue{
+			[]KeyValue{
+				{
+					"id",
+					"",
+					"integer",
+					-1,
+					"Unique ID of the user.",
+					[]KeyValue{},
+				},
+				{
+					"name",
+					"",
+					"string",
+					0,
+					"Name of the user.",
+					[]KeyValue{},
 				},
 			},
 		},
