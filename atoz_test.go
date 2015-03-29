@@ -7,16 +7,6 @@ import (
 	"testing"
 )
 
-/**
- * List Files
- * Get Groupings
- * Parse all Groups ( Definitions, then Objects, then Actions )
- * 		Get Line Type
- *   	Parse String
- *    	Parse KeyValue
- *     	Merge KeyValue
- */
-
 type testParseLineTypeCase struct {
 	line     string
 	lineType string
@@ -56,12 +46,12 @@ var testParseLineTypeCases = []testParseLineTypeCase{
 	},
 	{
 		"@required {Type,Limit} Objectspace Description",
-		"required",
+		"parameter",
 		false,
 	},
 	{
 		"@optional {Type,Limit} Objectspace Description",
-		"optional",
+		"parameter",
 		false,
 	},
 	{
@@ -71,12 +61,12 @@ var testParseLineTypeCases = []testParseLineTypeCase{
 	},
 	{
 		"@success {Type,Limit} Objectspace Description",
-		"success",
+		"return",
 		false,
 	},
 	{
 		"@failure {Type,Limit} Objectspace Description",
-		"failure",
+		"return",
 		false,
 	},
 }
@@ -100,6 +90,55 @@ func TestParseLineType(t *testing.T) {
 			}
 			if resultLineType != test.lineType {
 				t.Errorf("TestParseLineType Line Value Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineType, resultLineType)
+				return
+			}
+		}
+	}
+}
+
+type testParseGroupRefCase struct {
+	group    []string
+	refValue string
+	err      bool
+}
+
+var testParseGroupRefCases = []testParseGroupRefCase{
+	{
+		[]string{
+			" * @ref /Defs/Authorization",
+			" * @parameter {Object} auth ",
+			" * @parameter {Integer} auth.id ",
+			" * @parameter {String,64} auth.key ",
+		},
+		"/Defs/Authorization",
+		false,
+	},
+	{
+		[]string{
+			" * @parameter {Object} auth ",
+			" * @parameter {Integer} auth.id ",
+			" * @parameter {String,64} auth.key ",
+		},
+		"",
+		true,
+	},
+}
+
+func TestParseGroupRef(t *testing.T) {
+	var resultLineRefValue string
+	var resultErr error
+
+	for _, test := range testParseGroupRefCases {
+		resultLineRefValue, resultErr = ParseGroupRef(test.group)
+
+		if resultErr != nil {
+			if !test.err {
+				t.Errorf("TestParseGroupRef Unexpected error: %s", resultErr)
+				return
+			}
+		} else {
+			if resultLineRefValue != test.refValue {
+				t.Errorf("TestParseGroupRef Ref Value Mismatch: %s\nExpected: %s\n  Actual: %s", test.group, test.refValue, resultLineRefValue)
 				return
 			}
 		}
@@ -373,9 +412,12 @@ func TestParseLineKeyValue(t *testing.T) {
 }
 
 type testParseGroupsCase struct {
-	lines  string
-	groups [][]string
-	err    bool
+	lines            string
+	groups           [][]string
+	definitionGroups map[string][]string
+	actionGroups     map[string][]string
+	objectGroups     map[string][]string
+	err              bool
 }
 
 var testParseGroupsCases = []testParseGroupsCase{
@@ -407,9 +449,9 @@ int main(void)
 
 /**
  * ---ATOZDEF---
- * @name /Defs/BaseResult
+ * @ref /Defs/BaseResult
  * @success {Boolean} success A boolean to show whether or not the request was successful.
- * @error {String} error An error message describing what went wrong.
+ * @failure {String} error An error message describing what went wrong.
  * ---ATOZEND---
  */
 
@@ -469,9 +511,9 @@ int main(void)
 			},
 			{
 				" * ---ATOZDEF---",
-				" * @name /Defs/BaseResult",
+				" * @ref /Defs/BaseResult",
 				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
-				" * @error {String} error An error message describing what went wrong.",
+				" * @failure {String} error An error message describing what went wrong.",
 				" * ---ATOZEND---",
 			},
 			{
@@ -497,6 +539,41 @@ int main(void)
 				" * ---ATOZEND---",
 			},
 		},
+		map[string][]string{
+			"/Defs/Authorization": []string{
+				" * @ref /Defs/Authorization",
+				" * @parameter {Object} auth ",
+				" * @parameter {Integer} auth.id ",
+				" * @parameter {String,64} auth.key ",
+			},
+			"/Defs/BaseResult": []string{
+				" * @ref /Defs/BaseResult",
+				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
+				" * @failure {String} error An error message describing what went wrong.",
+			},
+		},
+		map[string][]string{
+			"/MyApp/User/Lookup": []string{
+				" * @name User Lookup",
+				" * @ref /MyApp/User/Lookup",
+				" * @uri /User/Lookup",
+				" * @description Get the information for a user.",
+				" * @include /Defs/Authorization",
+				" * @parameter {Integer} id The ID of the user.",
+				" * @include /Defs/BaseResult",
+				" * @success {#/Application/User#} user",
+			},
+		},
+		map[string][]string{
+			"/Application/User": []string{
+				" * @name User",
+				" * @ref /Application/User",
+				" * @description A user in the application.",
+				" * @property id INTEGER Unique ID of the user.",
+				" * @property name STRING Name of the user.",
+				" * @property email STRING Email address for the user.",
+			},
+		},
 		false,
 	},
 	{
@@ -520,6 +597,9 @@ int main(void)
 		[][]string{
 			{},
 		},
+		map[string][]string{},
+		map[string][]string{},
+		map[string][]string{},
 		true,
 	},
 }
@@ -527,6 +607,10 @@ int main(void)
 func TestParseGroups(t *testing.T) {
 	var resultLineGroups [][]string
 	var resultErr error
+
+	var resultLineDefinitionGroups map[string][]string
+	var resultLineActionGroups map[string][]string
+	var resultLineObjectGroups map[string][]string
 
 	for _, test := range testParseGroupsCases {
 		buffer := bytes.NewBufferString(test.lines)
@@ -548,6 +632,75 @@ func TestParseGroups(t *testing.T) {
 					}
 					t.Errorf("Actual:")
 					for _, line := range resultLineGroups[i] {
+						t.Errorf("\t%s", line)
+					}
+				}
+			}
+
+			resultLineDefinitionGroups, resultErr = GetDefinitionGroups(resultLineGroups)
+
+			if resultErr != nil {
+				t.Errorf("TestParseGroups GetDefinitionGroups error: %s", resultErr)
+				return
+			}
+
+			if !reflect.DeepEqual(resultLineDefinitionGroups, test.definitionGroups) {
+				t.Errorf("TestParseGroups GetDefinitionGroups Mismatch:")
+				t.Errorf("Expected:")
+				for _, group := range test.definitionGroups {
+					for _, line := range group {
+						t.Errorf("\t%s", line)
+					}
+				}
+				t.Errorf("Actual:")
+				for _, group := range resultLineDefinitionGroups {
+					for _, line := range group {
+						t.Errorf("\t%s", line)
+					}
+				}
+			}
+
+			resultLineActionGroups, resultErr = GetActionGroups(resultLineGroups)
+
+			if resultErr != nil {
+				t.Errorf("TestParseGroups GetActionGroups error: %s", resultErr)
+				return
+			}
+
+			if !reflect.DeepEqual(resultLineActionGroups, test.actionGroups) {
+				t.Errorf("TestParseGroups GetActionGroups Mismatch:")
+				t.Errorf("Expected:")
+				for _, group := range test.actionGroups {
+					for _, line := range group {
+						t.Errorf("\t%s", line)
+					}
+				}
+				t.Errorf("Actual:")
+				for _, group := range resultLineActionGroups {
+					for _, line := range group {
+						t.Errorf("\t%s", line)
+					}
+				}
+			}
+
+			resultLineObjectGroups, resultErr = GetObjectGroups(resultLineGroups)
+
+			if resultErr != nil {
+				t.Errorf("TestParseGroups GetObjectGroups error: %s", resultErr)
+				return
+			}
+
+			if !reflect.DeepEqual(resultLineDefinitionGroups, test.definitionGroups) {
+				t.Errorf("TestParseGroups GetObjectGroups Mismatch:")
+				t.Errorf("Expected:")
+				for _, group := range test.objectGroups {
+					for _, line := range group {
+						t.Errorf("\t%s", line)
+					}
+				}
+				t.Errorf("Actual:")
+				for _, group := range resultLineObjectGroups {
+					for _, line := range group {
 						t.Errorf("\t%s", line)
 					}
 				}
@@ -722,7 +875,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 		false,
 	},
 	{
-		"required",
+		"parameter",
 		`
 /**
  * ---ATOZDEF---
@@ -812,7 +965,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 		false,
 	},
 	{
-		"required",
+		"parameter",
 		`
 /**
  * ---ATOZOBJ---
@@ -874,9 +1027,12 @@ func TestGenerateKeyValues(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.resultKeyValues[i], resultKeyValues) {
-				t.Errorf("TestParseGroupType Group Type Mismatch: \n%s\nExpected: %s\n  Actual: %s", test.definition, test.resultKeyValues[i], resultKeyValues)
+				t.Errorf("TestGenerateKeyValues Group Type Mismatch: \n%s\nExpected: %s\n  Actual: %s", test.definition, test.resultKeyValues[i], resultKeyValues)
 				return
 			}
 		}
 	}
+}
+
+type testParseGroups struct {
 }

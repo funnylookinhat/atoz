@@ -3,17 +3,16 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 )
 
-/*
-type Definition struct {
-	Ref      string     `json:"ref"`
-	Children []KeyValue `json:"children:"`
+type ApiSpec struct {
+	Actions []Action `json:"actions"`
+	Objects []Object `json:"objects"`
 }
-*/
 
 type Action struct {
 	Name        string     `json:"name"`
@@ -47,30 +46,131 @@ const (
 	endDefinition   = "---ATOZEND---"
 )
 
-func GetLineType(line string) (string, error) {
-	return "", nil
+func GenerateApiSpec(files []string) (ApiSpec, error) {
+	var err error
+
+	groups := make([][]string, 0)
+
+	var definitionGroups map[string][]string
+	var actionGroups map[string][]string
+	var objectGroups map[string][]string
+
+	for _, path := range files {
+		file, err := os.Open(path)
+		reader := bufio.NewReader(file)
+
+		if err != nil {
+			return ApiSpec{}, err
+		}
+
+		parseGroupsFiles, parseGroupsErr := ParseGroups(reader)
+
+		if parseGroupsErr != nil {
+			return ApiSpec{}, parseGroupsErr
+		}
+
+		for _, parseGroupFile := range parseGroupsFiles {
+			groups = append(groups, parseGroupFile)
+		}
+	}
+
+	definitionGroups, err = GetDefinitionGroups(groups)
+
+	if err != nil {
+		return ApiSpec{}, err
+	}
+
+	actionGroups, err = GetActionGroups(groups)
+
+	if err != nil {
+		return ApiSpec{}, err
+	}
+
+	objectGroups, err = GetObjectGroups(groups)
+
+	if err != nil {
+		return ApiSpec{}, err
+	}
+
+	fmt.Printf("%v", definitionGroups)
+	fmt.Printf("%v", actionGroups)
+	fmt.Printf("%v", objectGroups)
+
+	/**
+	 * List Files
+	 * Get Groupings
+	 * Get Definitions Hashmap
+	 * 		Remove First and Last Line
+	 * Get Objects Hashmap
+	 * 		Remove First and Last Line
+	 * Get Actions Hashmap
+	 * 		Remove First and Last Line
+	 * Parse all Groups ( Definitions, then Objects, then Actions )
+	 * 		Get Line Type
+	 *   	Parse String
+	 *    	Parse KeyValue
+	 *     	Merge KeyValue
+	 */
+
+	return ApiSpec{}, nil
+}
+
+func ParseGroups(r *bufio.Reader) ([][]string, error) {
+	groups := make([][]string, 0)
+
+	scanner := bufio.NewScanner(r)
+
+	var line string
+	group := make([]string, 0)
+
+	for scanner.Scan() {
+		line = scanner.Text()
+
+		if !utf8.ValidString(line) {
+			return make([][]string, 0), nil
+		}
+
+		if strings.Contains(line, startDefinition) ||
+			strings.Contains(line, startAction) ||
+			strings.Contains(line, startObject) {
+			group = append(group, line)
+		} else if strings.Contains(line, endDefinition) {
+			group = append(group, line)
+			groups = append(groups, group)
+			group = make([]string, 0)
+		} else if len(group) > 0 {
+			group = append(group, line)
+		}
+	}
+
+	if len(group) > 0 {
+		return nil, fmt.Errorf("Unclosed definition found.")
+	}
+
+	return groups, nil
 }
 
 // Receive
 // @name Something something
 // Return "name"
 func ParseLineType(line string) (string, error) {
-	var lineTypes = map[string]bool{
-		"@name":        true,
-		"@ref":         true,
-		"@uri":         true,
-		"@description": true,
-		"@include":     true,
-		"@parameter":   true,
-		"@required":    true,
-		"@optional":    true,
-		"@return":      true,
-		"@success":     true,
-		"@failure":     true,
-		"@property":    true,
+	var lineTypes = map[string]string{
+		"@name":        "name",
+		"@ref":         "ref",
+		"@uri":         "uri",
+		"@description": "description",
+		"@include":     "include",
+		"@parameter":   "parameter",
+		"@required":    "parameter",
+		"@optional":    "parameter",
+		"@return":      "return",
+		"@success":     "return",
+		"@failure":     "return",
+		"@property":    "property",
 	}
 
 	var returnValue string
+	var ok bool
 
 	atIndex := strings.Index(line, "@")
 
@@ -86,13 +186,44 @@ func ParseLineType(line string) (string, error) {
 		return "", fmt.Errorf("Invalid line - missing @declaration.")
 	}
 
-	if _, ok := lineTypes[lineParts[0]]; !ok {
-		return "", fmt.Errorf("Invalid line - unknown @declaration type.")
+	if returnValue, ok = lineTypes[lineParts[0]]; !ok {
+		return "", fmt.Errorf("Invalid line - unknown @declaration type. " + lineParts[0])
 	}
 
-	returnValue = lineParts[0]
+	return returnValue, nil
+}
 
-	return returnValue[1:len(returnValue)], nil
+func ParseLineFlag(line string) (string, error) {
+	var lineFlags = map[string]string{
+		"@required": "required",
+		"@optional": "optional",
+		"@success":  "success",
+		"@error":    "error",
+	}
+
+	var returnValue string
+	var ok bool
+
+	atIndex := strings.Index(line, "@")
+
+	if atIndex < 0 {
+		return "", fmt.Errorf("Invalid line - missing @declaration.")
+	}
+
+	line = line[atIndex:]
+
+	lineParts := strings.Split(line, " ")
+
+	if len(lineParts) < 1 {
+		return "", fmt.Errorf("Invalid line - missing @declaration.")
+	}
+
+	// If no flag, return a blank string.
+	if returnValue, ok = lineFlags[lineParts[0]]; !ok {
+		return "", nil
+	}
+
+	return returnValue, nil
 }
 
 // Receive
@@ -211,41 +342,6 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 	return returnType, returnLimit, returnObjectspace, returnDescription, nil
 }
 
-func ParseGroups(r *bufio.Reader) ([][]string, error) {
-	groups := make([][]string, 0)
-
-	scanner := bufio.NewScanner(r)
-
-	var line string
-	group := make([]string, 0)
-
-	for scanner.Scan() {
-		line = scanner.Text()
-
-		if !utf8.ValidString(line) {
-			return make([][]string, 0), nil
-		}
-
-		if strings.Contains(line, startDefinition) ||
-			strings.Contains(line, startAction) ||
-			strings.Contains(line, startObject) {
-			group = append(group, line)
-		} else if strings.Contains(line, endDefinition) {
-			group = append(group, line)
-			groups = append(groups, group)
-			group = make([]string, 0)
-		} else if len(group) > 0 {
-			group = append(group, line)
-		}
-	}
-
-	if len(group) > 0 {
-		return nil, fmt.Errorf("Unclosed definition found.")
-	}
-
-	return groups, nil
-}
-
 func ParseGroupType(line string) (string, error) {
 	if strings.Contains(line, startDefinition) {
 		return "definition", nil
@@ -258,7 +354,31 @@ func ParseGroupType(line string) (string, error) {
 	}
 
 	return "", fmt.Errorf("Invalid line: no starting group identifier found.")
+}
 
+func ParseGroupRef(group []string) (string, error) {
+	var lineType string
+	var err error
+
+	for _, line := range group {
+		lineType, err = ParseLineType(line)
+
+		if err != nil {
+			return "", err
+		}
+
+		if lineType == "ref" {
+			var lineValue, err = ParseLineString(line)
+
+			if err != nil {
+				return "", err
+			}
+
+			return lineValue, nil
+		}
+	}
+
+	return "", fmt.Errorf("No line type found.")
 }
 
 /*
@@ -267,11 +387,52 @@ func GenerateDefinition(lines []string) (Definition, error) {
 }
 */
 
-func GenerateObject(lines []string, definitions map[string]Definition) (Object, error) {
-	return Object{}, nil
+func GenerateObject(group []string, definitions map[string][]string) (Object, error) {
+	returnObject := Object{}
+
+	var err error
+	var lineType string
+
+	for _, line := range group {
+		lineType, err = ParseLineType(line)
+
+		if err != nil {
+			return returnObject, err
+		}
+
+		if lineType == "name" {
+			returnObject.Name, err = ParseLineString(line)
+
+			if err != nil {
+				return returnObject, err
+			}
+		}
+		else if lineType == "ref" {
+			returnObject.Ref, err = ParseLineString(line)
+
+			if err != nil {
+				return returnObject, err
+			}
+		}
+		else if lineType == "description" {
+			returnObject.Description, err = ParseLineString(line)
+
+			if err != nil {
+				return returnObject, err
+			}
+		}
+	}
+
+	returnObject.Properties, err = GenerateKeyValues("property", group, "")
+
+	if err != nil {
+		return returnObject, err
+	}
+
+	return returnObject, nil
 }
 
-func GenerateAction(lines []string, definitions map[string]Definition) (Action, error) {
+func GenerateAction(group []string, definitions map[string][]string) (Action, error) {
 	return Action{}, nil
 }
 
@@ -342,4 +503,70 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 	}
 
 	return keyValues, nil
+}
+
+func GetDefinitionGroups(groups [][]string) (map[string][]string, error) {
+	definitionGroups := make(map[string][]string, 0)
+
+	for _, group := range groups {
+		if groupType, err := ParseGroupType(group[0]); err != nil {
+			return definitionGroups, err
+		} else {
+			if groupType == "definition" {
+				group = group[1:]
+				group = group[0 : len(group)-1]
+				if groupRef, err := ParseGroupRef(group); err != nil {
+					return definitionGroups, err
+				} else {
+					definitionGroups[groupRef] = group
+				}
+			}
+		}
+	}
+
+	return definitionGroups, nil
+}
+
+func GetObjectGroups(groups [][]string) (map[string][]string, error) {
+	objectGroups := make(map[string][]string, 0)
+
+	for _, group := range groups {
+		if groupType, err := ParseGroupType(group[0]); err != nil {
+			return objectGroups, err
+		} else {
+			if groupType == "object" {
+				group = group[1:]
+				group = group[0 : len(group)-1]
+				if groupRef, err := ParseGroupRef(group); err != nil {
+					return objectGroups, err
+				} else {
+					objectGroups[groupRef] = group
+				}
+			}
+		}
+	}
+
+	return objectGroups, nil
+}
+
+func GetActionGroups(groups [][]string) (map[string][]string, error) {
+	actionGroups := make(map[string][]string, 0)
+
+	for _, group := range groups {
+		if groupType, err := ParseGroupType(group[0]); err != nil {
+			return actionGroups, err
+		} else {
+			if groupType == "action" {
+				group = group[1:]
+				group = group[0 : len(group)-1]
+				if groupRef, err := ParseGroupRef(group); err != nil {
+					return actionGroups, err
+				} else {
+					actionGroups[groupRef] = group
+				}
+			}
+		}
+	}
+
+	return actionGroups, nil
 }

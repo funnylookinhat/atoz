@@ -8,13 +8,11 @@
 			"parameters": [
 
 			],
-			"returnSuccess": [
-
-			],
-			"returnError": [
+			"returns": [
 				{
 					"name": "error",
 					"type": "string",
+					"flag": "error",
 					"limit": 0,
 					"description": "An error message detailing why the request failed"
 				}
@@ -33,18 +31,18 @@
 					"description": "The name of the user to echo back. (Required)"
 				}
 			],
-			"returnError": [
+			"returns": [
 				{
 					"name": "error",
 					"type": "string",
+					"flag": "error",
 					"limit": 0,
 					"description": "An error message detailing why the request failed"
-				}
-			],
-			"returnSuccess": [
+				},
 				{
 					"name": "message",
 					"type": "string",
+					"flag": "success",
 					"limit": 0,
 					"description": "A greeting message for the user."
 				}
@@ -59,34 +57,37 @@
 				{
 					"name": "name",
 					"type": "string",
+					"flag": "required",
 					"limit": 255,
 					"description": "The name (or nickname) of the user."
 				},
 				{
 					"name": "email",
 					"type": "string",
+					"flag": "required",
 					"limit": 254,
 					"description": "The email address for the user.  Will be validated and set to their primary email address."
 				},
 				{
 					"name": "password",
 					"type": "string",
+					"flag": "required",
 					"limit": 0,
 					"description": "The password for this account."
 				}
 			],
-			"returnError": [
+			"returns": [
 				{
 					"name": "error",
 					"type": "string",
+					"flag": "error",
 					"limit": 0,
 					"description": "An error message detailing why the request failed"
-				}
-			],
-			"returnSuccess": [
+				},
 				{
 					"name": "user",
 					"type": "#/App/User#",
+					"flag": "success",
 					"description": "The new user."
 				}
 			]
