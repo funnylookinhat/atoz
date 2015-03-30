@@ -1034,5 +1034,91 @@ func TestGenerateKeyValues(t *testing.T) {
 	}
 }
 
-type testParseGroups struct {
+type testGenerateActionCase struct {
+	group       []string
+	definitions map[string][]string
+	action      Action
+}
+
+var testGenerateActionCases = []testGenerateActionCase{
+	{
+		[]string{
+			" * @name User Lookup",
+			" * @ref /MyApp/User/Lookup",
+			" * @uri /User/Lookup",
+			" * @description Get the information for a user.",
+			" * @include /Defs/Authorization",
+			" * @parameter {Integer} id The ID of the user.",
+			" * @include /Defs/BaseResult",
+			" * @success {#/Application/User#} user The user.",
+		},
+		map[string][]string{
+			"/Defs/Authorization": []string{
+				" * @ref /Defs/Authorization",
+				" * @parameter {Object} auth Auth Object.",
+				" * @parameter {Integer} auth.id Auth ID.",
+				" * @parameter {String,64} auth.key Auth Key.",
+			},
+			"/Defs/BaseResult": []string{
+				" * @ref /Defs/BaseResult",
+				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
+				" * @failure {String} error An error message describing what went wrong.",
+			},
+		},
+		Action{
+			"User Lookup",
+			"/MyApp/User/Lookup",
+			"/User/Lookup",
+			"Get the information for a user.",
+			[]KeyValue{
+				KeyValue{
+					"id",
+					"",
+					"integer",
+					-1,
+					"The ID of the user.",
+					[]KeyValue{},
+				},
+				KeyValue{
+					"auth",
+					"",
+					"object",
+					-1,
+					"Auth Object.",
+					[]KeyValue{
+						KeyValue{
+							"id",
+							"",
+							"integer",
+							-1,
+							"Auth ID.",
+							[]KeyValue{},
+						},
+						KeyValue{
+							"key",
+							"",
+							"string",
+							0,
+							"Auth Key.",
+							[]KeyValue{},
+						},
+					},
+				},
+			},
+			[]KeyValue{
+				KeyValue{
+					"user",
+					"",
+					"#/Application/User#",
+					-1,
+					"The user.",
+					[]KeyValue{},
+				},
+			},
+		},
+	},
+}
+
+func TestGenerateAction(t *testing.T) {
+
 }

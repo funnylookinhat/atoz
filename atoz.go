@@ -92,27 +92,36 @@ func GenerateApiSpec(files []string) (ApiSpec, error) {
 		return ApiSpec{}, err
 	}
 
-	fmt.Printf("%v", definitionGroups)
-	fmt.Printf("%v", actionGroups)
-	fmt.Printf("%v", objectGroups)
+	var action Action
 
-	/**
-	 * List Files
-	 * Get Groupings
-	 * Get Definitions Hashmap
-	 * 		Remove First and Last Line
-	 * Get Objects Hashmap
-	 * 		Remove First and Last Line
-	 * Get Actions Hashmap
-	 * 		Remove First and Last Line
-	 * Parse all Groups ( Definitions, then Objects, then Actions )
-	 * 		Get Line Type
-	 *   	Parse String
-	 *    	Parse KeyValue
-	 *     	Merge KeyValue
-	 */
+	apiSpec := ApiSpec{
+		make([]Action, 0),
+		make([]Object, 0),
+	}
 
-	return ApiSpec{}, nil
+	for _, actionGroup := range actionGroups {
+		action, err = GenerateAction(actionGroup, definitionGroups)
+
+		if err != nil {
+			return ApiSpec{}, err
+		}
+
+		apiSpec.Actions = append(apiSpec.Actions, action)
+	}
+
+	var object Object
+
+	for _, objectGroup := range objectGroups {
+		object, err = GenerateObject(objectGroup, definitionGroups)
+
+		if err != nil {
+			return apiSpec, err
+		}
+
+		apiSpec.Objects = append(apiSpec.Objects, object)
+	}
+
+	return apiSpec, nil
 }
 
 func ParseGroups(r *bufio.Reader) ([][]string, error) {
@@ -187,6 +196,12 @@ func ParseLineType(line string) (string, error) {
 	}
 
 	if returnValue, ok = lineTypes[lineParts[0]]; !ok {
+		// Check if this is a defined type.
+		if lineParts[0][0:1] == "#" &&
+			lineParts[0][len(lineParts[0])-1:] == "#" {
+			return lineParts[0], nil
+		}
+
 		return "", fmt.Errorf("Invalid line - unknown @declaration type. " + lineParts[0])
 	}
 
@@ -381,19 +396,14 @@ func ParseGroupRef(group []string) (string, error) {
 	return "", fmt.Errorf("No line type found.")
 }
 
-/*
-func GenerateDefinition(lines []string) (Definition, error) {
-	return Definition{}, nil
-}
-*/
-
 func GenerateObject(group []string, definitions map[string][]string) (Object, error) {
 	returnObject := Object{}
 
 	var err error
 	var lineType string
+	var defRef string
 
-	for _, line := range group {
+	for i, line := range group {
 		lineType, err = ParseLineType(line)
 
 		if err != nil {
@@ -406,20 +416,30 @@ func GenerateObject(group []string, definitions map[string][]string) (Object, er
 			if err != nil {
 				return returnObject, err
 			}
-		}
-		else if lineType == "ref" {
+		} else if lineType == "ref" {
 			returnObject.Ref, err = ParseLineString(line)
 
 			if err != nil {
 				return returnObject, err
 			}
-		}
-		else if lineType == "description" {
+		} else if lineType == "description" {
 			returnObject.Description, err = ParseLineString(line)
 
 			if err != nil {
 				return returnObject, err
 			}
+		} else if lineType == "include" {
+			defRef, err = ParseLineString(line)
+
+			if err != nil {
+				return returnObject, err
+			}
+
+			if _, ok := definitions[defRef]; !ok {
+				return returnObject, fmt.Errorf("Definition not found: %s", defRef)
+			}
+
+			group = append(group[:i], append(definitions[defRef], group[i:]...)...)
 		}
 	}
 
@@ -433,7 +453,66 @@ func GenerateObject(group []string, definitions map[string][]string) (Object, er
 }
 
 func GenerateAction(group []string, definitions map[string][]string) (Action, error) {
-	return Action{}, nil
+	returnAction := Action{}
+
+	var err error
+	var lineType string
+	var defRef string
+
+	for i, line := range group {
+		lineType, err = ParseLineType(line)
+
+		if err != nil {
+			return returnAction, err
+		}
+
+		if lineType == "name" {
+			returnAction.Name, err = ParseLineString(line)
+
+			if err != nil {
+				return returnAction, err
+			}
+		} else if lineType == "ref" {
+			returnAction.Ref, err = ParseLineString(line)
+
+			if err != nil {
+				return returnAction, err
+			}
+		} else if lineType == "uri" {
+			returnAction.Ref, err = ParseLineString(line)
+
+			if err != nil {
+				return returnAction, err
+			}
+		} else if lineType == "description" {
+			returnAction.Description, err = ParseLineString(line)
+
+			if err != nil {
+				return returnAction, err
+			}
+		} else if lineType == "include" {
+			defRef, err = ParseLineString(line)
+
+			if err != nil {
+				return returnAction, err
+			}
+
+			if _, ok := definitions[defRef]; !ok {
+				return returnAction, fmt.Errorf("Definition not found: %s", defRef)
+			}
+
+			group = append(group[:i], append(definitions[defRef], group[i:]...)...)
+		}
+	}
+
+	returnAction.Parameters, err = GenerateKeyValues("parameter", group, "")
+	returnAction.Returns, err = GenerateKeyValues("return", group, "")
+
+	if err != nil {
+		return returnAction, err
+	}
+
+	return returnAction, nil
 }
 
 func GenerateKeyValues(keyValueType string, lines []string, objectspace string) ([]KeyValue, error) {
