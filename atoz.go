@@ -23,6 +23,27 @@ type Action struct {
 	Returns     []KeyValue `json:"returns"`
 }
 
+func (a Action) String() string {
+	returnString := "\tName: " + a.Name + "\n" +
+		"\tRef: " + a.Ref + "\n" +
+		"\tUri: " + a.Uri + "\n" +
+		"\tDescription: " + a.Description + "\n"
+
+	returnString += "\tParameters: \n"
+
+	for _, parameter := range a.Parameters {
+		returnString += parameter.String()
+	}
+
+	returnString += "\tReturns: \n"
+
+	for _, parameter := range a.Returns {
+		returnString += parameter.String()
+	}
+
+	return returnString
+}
+
 type Object struct {
 	Name        string     `json:"name"`
 	Ref         string     `json:"ref"`
@@ -37,6 +58,23 @@ type KeyValue struct {
 	Limit       int64      `json:"limit"`
 	Description string     `json:"description"`
 	Children    []KeyValue `json:"children"`
+}
+
+func (k KeyValue) String() string {
+	returnString := "\t\tName: " + k.Name + "\n" +
+		"\t\tFlag: " + k.Flag + "\n" +
+		"\t\tType: " + k.Type + "\n" +
+		"\t\tLimit: " + strconv.Itoa(int(k.Limit)) + "\n" +
+		"\t\tDescription: " + k.Description + "\n" +
+		"\t\tChildren: \n"
+
+	for _, child := range k.Children {
+		returnString += child.String()
+	}
+
+	returnString += "\n"
+
+	return returnString
 }
 
 const (
@@ -319,7 +357,10 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 	var ok bool
 
 	if returnTypeHasLimit, ok = lineTypeLimits[returnType]; !ok {
-		return "", -1, "", "", fmt.Errorf("Invalid type: %s", returnType)
+		if returnType[0:1] != "#" &&
+			returnType[len(returnType)-1:] != "#" {
+			return "", -1, "", "", fmt.Errorf("Invalid type: %s", returnType)
+		}
 	}
 
 	if len(lineTypeParts) > 2 {
@@ -479,7 +520,7 @@ func GenerateAction(group []string, definitions map[string][]string) (Action, er
 				return returnAction, err
 			}
 		} else if lineType == "uri" {
-			returnAction.Ref, err = ParseLineString(line)
+			returnAction.Uri, err = ParseLineString(line)
 
 			if err != nil {
 				return returnAction, err
@@ -599,6 +640,16 @@ func GetDefinitionGroups(groups [][]string) (map[string][]string, error) {
 				} else {
 					definitionGroups[groupRef] = group
 				}
+			}
+		}
+	}
+
+	// We want to remove @ref references from these as they'd overwrite something
+	// in the other definitions.
+	for i, definitionGroup := range definitionGroups {
+		for j, line := range definitionGroup {
+			if lineType, err := ParseLineType(line); err == nil && lineType == "ref" {
+				definitionGroups[i] = append(definitionGroups[i][:j], definitionGroups[i][(j+1):]...)
 			}
 		}
 	}

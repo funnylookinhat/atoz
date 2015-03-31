@@ -541,13 +541,11 @@ int main(void)
 		},
 		map[string][]string{
 			"/Defs/Authorization": []string{
-				" * @ref /Defs/Authorization",
 				" * @parameter {Object} auth ",
 				" * @parameter {Integer} auth.id ",
 				" * @parameter {String,64} auth.key ",
 			},
 			"/Defs/BaseResult": []string{
-				" * @ref /Defs/BaseResult",
 				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
 				" * @failure {String} error An error message describing what went wrong.",
 			},
@@ -1038,6 +1036,7 @@ type testGenerateActionCase struct {
 	group       []string
 	definitions map[string][]string
 	action      Action
+	err         bool
 }
 
 var testGenerateActionCases = []testGenerateActionCase{
@@ -1054,13 +1053,11 @@ var testGenerateActionCases = []testGenerateActionCase{
 		},
 		map[string][]string{
 			"/Defs/Authorization": []string{
-				" * @ref /Defs/Authorization",
 				" * @parameter {Object} auth Auth Object.",
 				" * @parameter {Integer} auth.id Auth ID.",
 				" * @parameter {String,64} auth.key Auth Key.",
 			},
 			"/Defs/BaseResult": []string{
-				" * @ref /Defs/BaseResult",
 				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
 				" * @failure {String} error An error message describing what went wrong.",
 			},
@@ -1109,16 +1106,51 @@ var testGenerateActionCases = []testGenerateActionCase{
 				KeyValue{
 					"user",
 					"",
-					"#/Application/User#",
+					"#/application/user#",
 					-1,
 					"The user.",
 					[]KeyValue{},
 				},
+				KeyValue{
+					"success",
+					"",
+					"boolean",
+					-1,
+					"A boolean to show whether or not the request was successful.",
+					[]KeyValue{},
+				},
+				KeyValue{
+					"error",
+					"",
+					"string",
+					-1,
+					"An error message describing what went wrong.",
+					[]KeyValue{},
+				},
 			},
 		},
+		false,
 	},
 }
 
 func TestGenerateAction(t *testing.T) {
+	var resultAction Action
+	var resultErr error
 
+	for _, test := range testGenerateActionCases {
+		resultAction, resultErr = GenerateAction(test.group, test.definitions)
+
+		if resultErr != nil {
+			if !test.err {
+				t.Errorf("TestGenerateAction Unexpected error: %s", resultErr)
+				return
+			}
+		} else {
+			if !reflect.DeepEqual(resultAction, test.action) {
+				t.Errorf("TestGenerateAction Mismatch")
+				t.Errorf("Expected: %s", test.action)
+				t.Errorf("  Actual: %s", resultAction)
+			}
+		}
+	}
 }
