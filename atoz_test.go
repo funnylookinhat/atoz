@@ -1122,7 +1122,7 @@ var testGenerateActionCases = []testGenerateActionCase{
 				KeyValue{
 					"user",
 					"",
-					"#/application/user#",
+					"#/Application/User#",
 					-1,
 					"The user.",
 					[]KeyValue{},

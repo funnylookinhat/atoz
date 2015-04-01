@@ -358,7 +358,12 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 
 	lineTypeParts := strings.Split(lineType, ",")
 
-	returnType = strings.ToLower(lineTypeParts[0])
+	returnType = lineTypeParts[0];
+
+	if returnType[0:1] != "#" &&
+		returnType[len(returnType)-1:] != "#" {
+		returnType = strings.ToLower(returnType)
+	}
 
 	var returnTypeHasLimit bool
 	var ok bool
