@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+	"sort"
 )
 
 type ApiSpec struct {
@@ -43,6 +44,12 @@ func (a Action) String() string {
 
 	return returnString
 }
+
+type ByName []KeyValue
+
+func (a ByName) Len() int           { return len(a) }
+func (a ByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 type Object struct {
 	Name        string     `json:"name"`
@@ -621,6 +628,8 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 			}
 		}
 	}
+
+	sort.Sort(ByName(keyValues))
 
 	return keyValues, nil
 }
