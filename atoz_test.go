@@ -1154,3 +1154,146 @@ func TestGenerateAction(t *testing.T) {
 		}
 	}
 }
+
+type testGenerateObjectCase struct {
+	group       []string
+	definitions map[string][]string
+	object      Object
+	err         bool
+}
+
+var testGenerateObjectCases = []testGenerateObjectCase{
+	{
+		[]string{
+			" * @name User",
+			" * @ref /Application/User",
+			" * @description A user in the application.",
+			" * @property {Integer} id Unique ID of the user.",
+			" * @property {String} name Name of the user.",
+			" * @property {String,254} email Email address for the user.",
+			" * @property {String} role The role of the user.",
+		},
+		map[string][]string{},
+		Object{
+			"User",
+			"/Application/User",
+			"A user in the application.",
+			[]KeyValue{
+				KeyValue{
+					"email",
+					"",
+					"string",
+					254,
+					"Email address for the user.",
+					[]KeyValue{},
+				},
+				KeyValue{
+					"id",
+					"",
+					"integer",
+					-1,
+					"Unique ID of the user.",
+					[]KeyValue{},
+				},
+				KeyValue{
+					"name",
+					"",
+					"string",
+					0,
+					"Name of the user.",
+					[]KeyValue{},
+				},
+				KeyValue{
+					"role",
+					"",
+					"string",
+					0,
+					"The role of the user.",
+					[]KeyValue{},
+				},
+			},
+		},
+		false,
+	},
+}
+
+func TestGenerateObject(t *testing.T) {
+	var resultObject Object
+	var resultErr error
+
+	for _, test := range testGenerateObjectCases {
+		resultObject, resultErr = GenerateObject(test.group, test.definitions)
+
+		if resultErr != nil {
+			if !test.err {
+				t.Errorf("TestGenerateObject Unexpected error: %s", resultErr)
+				return
+			}
+		} else {
+			if !reflect.DeepEqual(resultObject, test.object) {
+				t.Errorf("TestGenerateObject Mismatch")
+				t.Errorf("Expected: %s", test.object)
+				t.Errorf("  Actual: %s", resultObject)
+			}
+		}
+	}
+}
+
+/*
+ * @name User
+ * @ref /Application/User
+ * @description A user in the application.
+ * @property {Object} user The user.
+ * @property {Integer} user.id Unique ID of the user.
+ * @property {String} user.name Name of the user.
+ * @property {String} user.email Email address for the user.
+ * @property {String} user.role The role of the user.
+,
+		[][]KeyValue{
+			[]KeyValue{
+				KeyValue{
+					"user",
+					"",
+					"object",
+					-1,
+					"The user.",
+					[]KeyValue{
+						KeyValue{
+							"email",
+							"",
+							"string",
+							0,
+							"Email address for the user.",
+							[]KeyValue{},
+						},
+						KeyValue{
+							"id",
+							"",
+							"integer",
+							-1,
+							"Unique ID of the user.",
+							[]KeyValue{},
+						},
+						KeyValue{
+							"name",
+							"",
+							"string",
+							0,
+							"Name of the user.",
+							[]KeyValue{},
+						},
+						KeyValue{
+							"role",
+							"",
+							"string",
+							0,
+							"The role of the user.",
+							[]KeyValue{},
+						},
+					},
+				},
+			},
+		},
+		false,
+	},
+*/

@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode/utf8"
-	"sort"
 )
 
 type ApiSpec struct {
@@ -45,17 +45,25 @@ func (a Action) String() string {
 	return returnString
 }
 
-type ByName []KeyValue
-
-func (a ByName) Len() int           { return len(a) }
-func (a ByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
-
 type Object struct {
 	Name        string     `json:"name"`
 	Ref         string     `json:"ref"`
 	Description string     `json:"description"`
 	Properties  []KeyValue `json:"properties"`
+}
+
+func (o Object) String() string {
+	returnString := "\tName: " + o.Name + "\n" +
+		"\tRef: " + o.Ref + "\n" +
+		"\tDescription: " + o.Description + "\n"
+
+	returnString += "\tProperties: \n"
+
+	for _, parameter := range o.Properties {
+		returnString += parameter.String()
+	}
+
+	return returnString
 }
 
 type KeyValue struct {
@@ -83,6 +91,12 @@ func (k KeyValue) String() string {
 
 	return returnString
 }
+
+type ByName []KeyValue
+
+func (a ByName) Len() int           { return len(a) }
+func (a ByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 const (
 	startDefinition = "---ATOZDEF---"
@@ -358,7 +372,7 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 
 	lineTypeParts := strings.Split(lineType, ",")
 
-	returnType = lineTypeParts[0];
+	returnType = lineTypeParts[0]
 
 	if returnType[0:1] != "#" &&
 		returnType[len(returnType)-1:] != "#" {
