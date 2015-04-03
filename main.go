@@ -15,11 +15,9 @@ func main() {
 	var output string
 
 	flag.StringVar(&dir, "dir", "./", "Path to source tree.")
-	flag.StringVar(&output, "output", "./apispec.json", "File to write JSON to.")
+	flag.StringVar(&output, "output", "", "File to write JSON to.")
 
 	flag.Parse()
-
-	fmt.Println("Reading all files in " + dir)
 
 	var files []string
 	var err error
@@ -30,29 +28,35 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Found files: ")
-	for _, file := range files {
-		fmt.Println("\t" + file)
-	}
-
 	var apiSpec ApiSpec
 	var resultJson []byte
 
 	apiSpec, err = GenerateApiSpec(files)
 
 	if err != nil {
-		fmt.Printf("%s \n", err)
+		log.Fatal(err)
 		return
 	}
 
 	resultJson, err = json.Marshal(apiSpec)
 
 	if err != nil {
-		fmt.Printf("%s \n", err)
+		log.Fatal(err)
 		return
 	}
 
-	fmt.Printf("%s", resultJson)
+	// If no output file specified, throw to stdout
+	if len(output) == 0 {
+		fmt.Printf("%s", resultJson)
+		return
+	}
+
+	err = ioutil.WriteFile(output, resultJson, 0644)
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 }
 
 func findFiles(dir string) ([]string, error) {
