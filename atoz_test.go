@@ -235,6 +235,16 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 		"This is an integer.",
 		false,
 	},
+	// Integer
+	{
+		"@required {Integer} Some.Integer",
+		"integer",
+		"required",
+		-1,
+		"some.integer",
+		"",
+		false,
+	},
 	// Integer -Error - Integers don't take a limit
 	{
 		"@required {Integer,0} Some.Integer This is an integer.",
@@ -1190,10 +1200,10 @@ var testGenerateObjectCases = []testGenerateObjectCase{
 			" * @name User",
 			" * @ref /Application/User",
 			" * @description A user in the application.",
-			" * @property {Integer} id Unique ID of the user.",
-			" * @property {String} name Name of the user.",
-			" * @property {String,254} email Email address for the user.",
-			" * @property {String} role The role of the user.",
+			" * @property {Integer} id",
+			" * @property {String} name",
+			" * @property {String,254} email",
+			" * @property {String} role The primary role of the user.",
 		},
 		map[string][]string{},
 		Object{
@@ -1206,7 +1216,7 @@ var testGenerateObjectCases = []testGenerateObjectCase{
 					"",
 					"string",
 					254,
-					"Email address for the user.",
+					"",
 					[]KeyValue{},
 				},
 				KeyValue{
@@ -1214,7 +1224,7 @@ var testGenerateObjectCases = []testGenerateObjectCase{
 					"",
 					"integer",
 					-1,
-					"Unique ID of the user.",
+					"",
 					[]KeyValue{},
 				},
 				KeyValue{
@@ -1222,7 +1232,7 @@ var testGenerateObjectCases = []testGenerateObjectCase{
 					"",
 					"string",
 					0,
-					"Name of the user.",
+					"",
 					[]KeyValue{},
 				},
 				KeyValue{
@@ -1230,7 +1240,7 @@ var testGenerateObjectCases = []testGenerateObjectCase{
 					"",
 					"string",
 					0,
-					"The role of the user.",
+					"The primary role of the user.",
 					[]KeyValue{},
 				},
 			},

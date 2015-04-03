@@ -366,7 +366,7 @@ func ParseLineKeyValue(line string) (string, int64, string, string, string, erro
 
 	lineParts := strings.Split(line, " ")
 
-	if len(lineParts) < 4 {
+	if len(lineParts) < 3 {
 		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing one or more statements." + "\n\t" + line)
 	}
 
@@ -433,7 +433,11 @@ func ParseLineKeyValue(line string) (string, int64, string, string, string, erro
 
 	returnObjectspace = strings.ToLower(lineParts[2])
 
-	returnDescription = strings.Join(lineParts[3:], " ")
+	returnDescription = ""
+
+	if len(lineParts) > 3 {
+		returnDescription = strings.Join(lineParts[3:], " ")
+	}
 
 	return returnType, returnLimit, returnFlag, returnObjectspace, returnDescription, nil
 }
