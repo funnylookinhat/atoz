@@ -243,7 +243,7 @@ func ParseLineType(line string) (string, error) {
 	atIndex := strings.Index(line, "@")
 
 	if atIndex < 0 {
-		return "", fmt.Errorf("Invalid line - missing @declaration.")
+		return "", fmt.Errorf("Invalid line - missing @declaration." + "\n\t" + line)
 	}
 
 	line = line[atIndex:]
@@ -251,7 +251,7 @@ func ParseLineType(line string) (string, error) {
 	lineParts := strings.Split(line, " ")
 
 	if len(lineParts) < 1 {
-		return "", fmt.Errorf("Invalid line - missing @declaration.")
+		return "", fmt.Errorf("Invalid line - missing @declaration." + "\n\t" + line)
 	}
 
 	if returnValue, ok = lineTypes[lineParts[0]]; !ok {
@@ -261,7 +261,7 @@ func ParseLineType(line string) (string, error) {
 			return lineParts[0], nil
 		}
 
-		return "", fmt.Errorf("Invalid line - unknown @declaration type. " + lineParts[0])
+		return "", fmt.Errorf("Invalid line - unknown @declaration type. " + lineParts[0] + "\n\t" + line)
 	}
 
 	return returnValue, nil
@@ -359,7 +359,7 @@ func ParseLineKeyValue(line string) (string, int64, string, string, string, erro
 	atIndex := strings.Index(line, "@")
 
 	if atIndex < 0 {
-		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing @declaration.")
+		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing @declaration." + "\n\t" + line)
 	}
 
 	line = line[atIndex:]
@@ -367,7 +367,7 @@ func ParseLineKeyValue(line string) (string, int64, string, string, string, erro
 	lineParts := strings.Split(line, " ")
 
 	if len(lineParts) < 4 {
-		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing one or more statements.")
+		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing one or more statements." + "\n\t" + line)
 	}
 
 	returnFlag = ""
@@ -379,7 +379,7 @@ func ParseLineKeyValue(line string) (string, int64, string, string, string, erro
 	lineType := lineParts[1]
 
 	if strings.Index(lineType, "{") != 0 || strings.Index(lineType, "}") != (len(lineType)-1) {
-		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing {} type.")
+		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing {} type." + "\n\t" + line)
 	}
 
 	lineType = lineType[1 : len(lineType)-1]
@@ -399,15 +399,15 @@ func ParseLineKeyValue(line string) (string, int64, string, string, string, erro
 	if returnTypeHasLimit, ok = lineTypeLimits[returnType]; !ok {
 		if returnType[0:1] != "#" &&
 			returnType[len(returnType)-1:] != "#" {
-			return "", -1, "", "", "", fmt.Errorf("Invalid type: %s", returnType)
+			return "", -1, "", "", "", fmt.Errorf("Invalid type: %s"+"\n\t"+line, returnType)
 		}
 	}
 
 	if len(lineTypeParts) > 2 {
-		return "", -1, "", "", "", fmt.Errorf("Invalid {} type - must be in format {Type,Limit}")
+		return "", -1, "", "", "", fmt.Errorf("Invalid {} type - must be in format {Type,Limit}" + "\n\t" + line)
 	} else if len(lineTypeParts) == 2 {
 		if _, err := strconv.Atoi(lineTypeParts[1]); err != nil {
-			return "", -1, "", "", "", fmt.Errorf("Invalid Type Limit - must be an integer.")
+			return "", -1, "", "", "", fmt.Errorf("Invalid Type Limit - must be an integer." + "\n\t" + line)
 		}
 
 		returnLimit, err = strconv.ParseInt(lineTypeParts[1], 10, 64)
@@ -424,11 +424,11 @@ func ParseLineKeyValue(line string) (string, int64, string, string, string, erro
 	}
 
 	if returnLimit >= 0 && !returnTypeHasLimit {
-		return "", -1, "", "", "", fmt.Errorf("Invalid limit: %s does not accept a limit.", returnType)
+		return "", -1, "", "", "", fmt.Errorf("Invalid limit: %s does not accept a limit."+"\n\t"+line, returnType)
 	}
 
 	if len(lineTypeParts) > 2 {
-		return "", -1, "", "", "", fmt.Errorf("Invalid {} type - must be in format {Type,Limit}.")
+		return "", -1, "", "", "", fmt.Errorf("Invalid {} type - must be in format {Type,Limit}." + "\n\t" + line)
 	}
 
 	returnObjectspace = strings.ToLower(lineParts[2])
@@ -474,7 +474,7 @@ func ParseGroupRef(group []string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("No line type found.")
+	return "", fmt.Errorf("No line type found in definition."+"\n\t"+"%s", group)
 }
 
 func GenerateObject(group []string, definitions map[string][]string) (Object, error) {

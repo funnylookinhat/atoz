@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -34,10 +35,24 @@ func main() {
 		fmt.Println("\t" + file)
 	}
 
-	// apiSpec will be all actions and objects
-	// apiSpec := GenerateApiSpec(files)
+	var apiSpec ApiSpec
+	var resultJson []byte
 
-	// TODO - Write apiSpec out
+	apiSpec, err = GenerateApiSpec(files)
+
+	if err != nil {
+		fmt.Printf("%s \n", err)
+		return
+	}
+
+	resultJson, err = json.Marshal(apiSpec)
+
+	if err != nil {
+		fmt.Printf("%s \n", err)
+		return
+	}
+
+	fmt.Printf("%s", resultJson)
 }
 
 func findFiles(dir string) ([]string, error) {

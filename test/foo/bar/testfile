@@ -24,9 +24,10 @@ int main(void)
 
 /**
  * ---ATOZDEF---
- * @name /Defs/BaseResult
- * @success {Boolean} success A boolean to show whether or not the request was successful.
- * @error {String} error An error message describing what went wrong.
+ * @ref /Defs/BaseResult
+ * @return {Boolean} success A boolean to show whether or not the request was successful.
+ * @failure {String} error An error message describing what went wrong.
+ * ---ATOZEND---
  */
 
 #include <stdio.h>
@@ -45,7 +46,7 @@ int main(void)
  * @include /Defs/Authorization
  * @parameter {Integer} id The ID of the user.
  * @include /Defs/BaseResult
- * @success {#/Application/User#} user
+ * @success {#/Application/User#} user The user.
  * ---ATOZEND---
  */
 
@@ -61,9 +62,9 @@ int main(void)
  * @name User
  * @ref /Application/User
  * @description A user in the application.
- * @property id INTEGER Unique ID of the user.
- * @property name STRING Name of the user.
- * @property email STRING Email address for the user.
+ * @property {Integer} id Unique ID of the user.
+ * @property {String} name Name of the user.
+ * @property {String,254} email Email address for the user.
  * ---ATOZEND---
  */
 
