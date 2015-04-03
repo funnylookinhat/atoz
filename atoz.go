@@ -331,8 +331,8 @@ func ParseLineString(line string) (string, error) {
 
 // Receive
 // @returns {Type,Limit} Objectspace Description
-// Return Type, Limit, Objectspace, Description
-func ParseLineKeyValue(line string) (string, int64, string, string, error) {
+// Return Type, Limit, Flag, Objectspace, Description
+func ParseLineKeyValue(line string) (string, int64, string, string, string, error) {
 	lineTypeLimits := map[string]bool{
 		"boolean": false,
 		"integer": false,
@@ -342,8 +342,16 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 		"object":  false,
 	}
 
+	lineTypeFlags := map[string]string{
+		"@required": "required",
+		"@optional": "optional",
+		"@success":  "success",
+		"@failure":  "failure",
+	}
+
 	var returnType string
 	var returnLimit int64
+	var returnFlag string
 	var returnObjectspace string
 	var returnDescription string
 	var err error
@@ -351,7 +359,7 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 	atIndex := strings.Index(line, "@")
 
 	if atIndex < 0 {
-		return "", -1, "", "", fmt.Errorf("Invalid line - missing @declaration.")
+		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing @declaration.")
 	}
 
 	line = line[atIndex:]
@@ -359,13 +367,19 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 	lineParts := strings.Split(line, " ")
 
 	if len(lineParts) < 4 {
-		return "", -1, "", "", fmt.Errorf("Invalid line - missing one or more statements.")
+		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing one or more statements.")
+	}
+
+	returnFlag = ""
+
+	if _, ok := lineTypeFlags[lineParts[0]]; ok {
+		returnFlag = lineTypeFlags[lineParts[0]]
 	}
 
 	lineType := lineParts[1]
 
 	if strings.Index(lineType, "{") != 0 || strings.Index(lineType, "}") != (len(lineType)-1) {
-		return "", -1, "", "", fmt.Errorf("Invalid line - missing {} type.")
+		return "", -1, "", "", "", fmt.Errorf("Invalid line - missing {} type.")
 	}
 
 	lineType = lineType[1 : len(lineType)-1]
@@ -385,21 +399,21 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 	if returnTypeHasLimit, ok = lineTypeLimits[returnType]; !ok {
 		if returnType[0:1] != "#" &&
 			returnType[len(returnType)-1:] != "#" {
-			return "", -1, "", "", fmt.Errorf("Invalid type: %s", returnType)
+			return "", -1, "", "", "", fmt.Errorf("Invalid type: %s", returnType)
 		}
 	}
 
 	if len(lineTypeParts) > 2 {
-		return "", -1, "", "", fmt.Errorf("Invalid {} type - must be in format {Type,Limit}")
+		return "", -1, "", "", "", fmt.Errorf("Invalid {} type - must be in format {Type,Limit}")
 	} else if len(lineTypeParts) == 2 {
 		if _, err := strconv.Atoi(lineTypeParts[1]); err != nil {
-			return "", -1, "", "", fmt.Errorf("Invalid Type Limit - must be an integer.")
+			return "", -1, "", "", "", fmt.Errorf("Invalid Type Limit - must be an integer.")
 		}
 
 		returnLimit, err = strconv.ParseInt(lineTypeParts[1], 10, 64)
 
 		if err != nil {
-			return "", -1, "", "", err
+			return "", -1, "", "", "", err
 		}
 	} else {
 		if returnTypeHasLimit {
@@ -410,18 +424,18 @@ func ParseLineKeyValue(line string) (string, int64, string, string, error) {
 	}
 
 	if returnLimit >= 0 && !returnTypeHasLimit {
-		return "", -1, "", "", fmt.Errorf("Invalid limit: %s does not accept a limit.", returnType)
+		return "", -1, "", "", "", fmt.Errorf("Invalid limit: %s does not accept a limit.", returnType)
 	}
 
 	if len(lineTypeParts) > 2 {
-		return "", -1, "", "", fmt.Errorf("Invalid {} type - must be in format {Type,Limit}.")
+		return "", -1, "", "", "", fmt.Errorf("Invalid {} type - must be in format {Type,Limit}.")
 	}
 
 	returnObjectspace = strings.ToLower(lineParts[2])
 
 	returnDescription = strings.Join(lineParts[3:], " ")
 
-	return returnType, returnLimit, returnObjectspace, returnDescription, nil
+	return returnType, returnLimit, returnFlag, returnObjectspace, returnDescription, nil
 }
 
 func ParseGroupType(line string) (string, error) {
@@ -589,15 +603,13 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 	// but should provide a nice proof-of-concept
 	var lineKeyValueType string
 	var lineKeyValueLimit int64
+	var lineKeyValueFlag string
 	var lineKeyValueObjectspace string
 	var lineKeyValueDescription string
 	var lineKeyValueError error
 
 	var lineType string
 	var lineTypeError error
-
-	var lineFlag string
-	// var lineFlagError error
 
 	var lineKeyValue KeyValue
 
@@ -609,16 +621,13 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 
 			lineType, lineTypeError = ParseLineType(line)
 
-			lineFlag = ""
-			// lineFlagError = nil
-
 			if lineTypeError != nil {
 				return make([]KeyValue, 0), lineTypeError
 			}
 
 			if lineType == keyValueType {
 
-				lineKeyValueType, lineKeyValueLimit, lineKeyValueObjectspace, lineKeyValueDescription, lineKeyValueError = ParseLineKeyValue(line)
+				lineKeyValueType, lineKeyValueLimit, lineKeyValueFlag, lineKeyValueObjectspace, lineKeyValueDescription, lineKeyValueError = ParseLineKeyValue(line)
 
 				if lineKeyValueError != nil {
 					return keyValues, lineKeyValueError
@@ -628,7 +637,7 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 					strings.Index(strings.Replace(lineKeyValueObjectspace, objectspace, "", 1), ".") < 0 {
 					lineKeyValue = KeyValue{
 						strings.Replace(lineKeyValueObjectspace, objectspace, "", 1),
-						lineFlag,
+						lineKeyValueFlag,
 						lineKeyValueType,
 						lineKeyValueLimit,
 						lineKeyValueDescription,

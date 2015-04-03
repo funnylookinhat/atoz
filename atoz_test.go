@@ -217,6 +217,7 @@ func TestParseLineString(t *testing.T) {
 type testParseLineKeyValueCase struct {
 	line            string
 	lineType        string
+	lineFlag        string
 	lineLimit       int64
 	lineObjectspace string
 	lineDescription string
@@ -228,6 +229,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {Integer} Some.Integer This is an integer.",
 		"integer",
+		"required",
 		-1,
 		"some.integer",
 		"This is an integer.",
@@ -237,6 +239,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {Integer,0} Some.Integer This is an integer.",
 		"integer",
+		"required",
 		0,
 		"some.integer",
 		"This is an integer.",
@@ -246,6 +249,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required Integer Some.Integer This is an integer.",
 		"integer",
+		"required",
 		0,
 		"some.integer",
 		"This is an integer.",
@@ -255,6 +259,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {BLARG} Some.Fake.Type This should error.",
 		"blarg",
+		"required",
 		0,
 		"some.fake.type",
 		"This should error.",
@@ -262,8 +267,9 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	},
 	// Boolean
 	{
-		"@required {Boolean} Some.Path.To.Boolean This is a bool.",
+		"@optional {Boolean} Some.Path.To.Boolean This is a bool.",
 		"boolean",
+		"optional",
 		-1,
 		"some.path.to.boolean",
 		"This is a bool.",
@@ -273,6 +279,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {Boolean,0} Some.Path.To.Boolean This is a bool.",
 		"boolean",
+		"required",
 		-1,
 		"some.path.to.boolean",
 		"This is a bool.",
@@ -282,6 +289,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {Decimal} some.path.to.decimal This is a decimal.",
 		"decimal",
+		"required",
 		0,
 		"some.path.to.decimal",
 		"This is a decimal.",
@@ -289,8 +297,9 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	},
 	// Decimal - Limit 1
 	{
-		"@required {Decimal,1} some.path.to.decimal This is a decimal.",
+		"@optional {Decimal,1} some.path.to.decimal This is a decimal.",
 		"decimal",
+		"optional",
 		1,
 		"some.path.to.decimal",
 		"This is a decimal.",
@@ -298,8 +307,9 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	},
 	// Decimal - Limit 5
 	{
-		"@required {Decimal,5} some.path.to.decimal This is a decimal.",
+		"@parameter {Decimal,5} some.path.to.decimal This is a decimal.",
 		"decimal",
+		"",
 		5,
 		"some.path.to.decimal",
 		"This is a decimal.",
@@ -309,6 +319,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {Decimal,ABC} some.path.to.decimal This is a decimal.",
 		"decimal",
+		"required",
 		-1,
 		"some.path.to.decimal",
 		"This is a decimal.",
@@ -316,8 +327,9 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	},
 	// String
 	{
-		"@required {String} some.path.to.string This is a string.",
+		"@parameter {String} some.path.to.string This is a string.",
 		"string",
+		"",
 		0,
 		"some.path.to.string",
 		"This is a string.",
@@ -327,6 +339,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {String,1} some.path.to.string This is a string.",
 		"string",
+		"required",
 		1,
 		"some.path.to.string",
 		"This is a string.",
@@ -336,6 +349,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {String,5} some.path.to.string This is a string.",
 		"string",
+		"required",
 		5,
 		"some.path.to.string",
 		"This is a string.",
@@ -345,6 +359,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {String,ABC} some.path.to.string This is a string.",
 		"string",
+		"required",
 		-1,
 		"some.path.to.string",
 		"This is a string.",
@@ -354,6 +369,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {Array} some.path.to.array This is an array.",
 		"array",
+		"required",
 		0,
 		"some.path.to.array",
 		"This is an array.",
@@ -363,6 +379,7 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 	{
 		"@required {Object} some.path.to.object This is an object.",
 		"object",
+		"required",
 		-1,
 		"some.path.to.object",
 		"This is an object.",
@@ -373,12 +390,13 @@ var testParseLineKeyValueCases = []testParseLineKeyValueCase{
 func TestParseLineKeyValue(t *testing.T) {
 	var resultLineType string
 	var resultLineLimit int64
+	var resultLineFlag string
 	var resultLineObjectspace string
 	var resultLineDescription string
 	var resultErr error
 
 	for _, test := range testParseLineKeyValueCases {
-		resultLineType, resultLineLimit, resultLineObjectspace, resultLineDescription, resultErr = ParseLineKeyValue(test.line)
+		resultLineType, resultLineLimit, resultLineFlag, resultLineObjectspace, resultLineDescription, resultErr = ParseLineKeyValue(test.line)
 
 		if resultErr != nil {
 			if !test.err {
@@ -392,6 +410,10 @@ func TestParseLineKeyValue(t *testing.T) {
 			}
 			if resultLineType != test.lineType {
 				t.Errorf("TestParseLineKeyValue Line Type Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineType, resultLineType)
+				return
+			}
+			if resultLineFlag != test.lineFlag {
+				t.Errorf("TestParseLineKeyValue Line Type Mismatch: %s\nExpected: %s\n  Actual: %s", test.line, test.lineFlag, resultLineFlag)
 				return
 			}
 			if resultLineLimit != test.lineLimit {
@@ -893,21 +915,21 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 			[]KeyValue{
 				KeyValue{
 					"auth",
-					"",
+					"required",
 					"object",
 					-1,
 					"Auth object.",
 					[]KeyValue{
 						KeyValue{
 							"token",
-							"",
+							"required",
 							"object",
 							-1,
 							"Token object.",
 							[]KeyValue{
 								KeyValue{
 									"key",
-									"",
+									"required",
 									"string",
 									0,
 									"Token key.",
@@ -915,7 +937,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 								},
 								KeyValue{
 									"secret",
-									"",
+									"required",
 									"string",
 									0,
 									"Token secret.",
@@ -925,14 +947,14 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 						},
 						KeyValue{
 							"user",
-							"",
+							"required",
 							"object",
 							-1,
 							"User object.",
 							[]KeyValue{
 								KeyValue{
 									"email",
-									"",
+									"required",
 									"string",
 									0,
 									"Email address.",
@@ -940,7 +962,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 								},
 								KeyValue{
 									"id",
-									"",
+									"required",
 									"integer",
 									-1,
 									"User ID.",
@@ -948,7 +970,7 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 								},
 								KeyValue{
 									"name",
-									"",
+									"required",
 									"string",
 									0,
 									"First and last ( or common ) name.",
@@ -963,16 +985,16 @@ var testGenerateKeyValuesCases = []testGenerateKeyValuesCase{
 		false,
 	},
 	{
-		"parameter",
+		"property",
 		`
 /**
  * ---ATOZOBJ---
  * @name User
  * @ref /Application/User
  * @description A user in the application.
- * @required {Integer} id Unique ID of the user.
- * @required {String} name Name of the user.
- * @required {String} user.email Email address for the user.
+ * @property {Integer} id Unique ID of the user.
+ * @property {String} name Name of the user.
+ * @property {String} user.email Email address for the user.
  * ---ATOZEND---
  */
 		`,
@@ -1058,7 +1080,7 @@ var testGenerateActionCases = []testGenerateActionCase{
 				" * @parameter {String,64} auth.key Auth Key.",
 			},
 			"/Defs/BaseResult": []string{
-				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
+				" * @return {Boolean} success A boolean to show whether or not the request was successful.",
 				" * @failure {String} error An error message describing what went wrong.",
 			},
 		},
@@ -1105,7 +1127,7 @@ var testGenerateActionCases = []testGenerateActionCase{
 			[]KeyValue{
 				KeyValue{
 					"error",
-					"",
+					"failure",
 					"string",
 					0,
 					"An error message describing what went wrong.",
@@ -1121,7 +1143,7 @@ var testGenerateActionCases = []testGenerateActionCase{
 				},
 				KeyValue{
 					"user",
-					"",
+					"success",
 					"#/Application/User#",
 					-1,
 					"The user.",
@@ -1238,62 +1260,3 @@ func TestGenerateObject(t *testing.T) {
 		}
 	}
 }
-
-/*
- * @name User
- * @ref /Application/User
- * @description A user in the application.
- * @property {Object} user The user.
- * @property {Integer} user.id Unique ID of the user.
- * @property {String} user.name Name of the user.
- * @property {String} user.email Email address for the user.
- * @property {String} user.role The role of the user.
-,
-		[][]KeyValue{
-			[]KeyValue{
-				KeyValue{
-					"user",
-					"",
-					"object",
-					-1,
-					"The user.",
-					[]KeyValue{
-						KeyValue{
-							"email",
-							"",
-							"string",
-							0,
-							"Email address for the user.",
-							[]KeyValue{},
-						},
-						KeyValue{
-							"id",
-							"",
-							"integer",
-							-1,
-							"Unique ID of the user.",
-							[]KeyValue{},
-						},
-						KeyValue{
-							"name",
-							"",
-							"string",
-							0,
-							"Name of the user.",
-							[]KeyValue{},
-						},
-						KeyValue{
-							"role",
-							"",
-							"string",
-							0,
-							"The role of the user.",
-							[]KeyValue{},
-						},
-					},
-				},
-			},
-		},
-		false,
-	},
-*/
