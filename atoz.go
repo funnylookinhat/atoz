@@ -30,13 +30,13 @@ func (a Action) String() string {
 		"\tUri: " + a.Uri + "\n" +
 		"\tDescription: " + a.Description + "\n"
 
-	returnString += "\tParameters: \n"
+	returnString += "\n\tParameters: \n"
 
 	for _, parameter := range a.Parameters {
 		returnString += parameter.String()
 	}
 
-	returnString += "\tReturns: \n"
+	returnString += "\n\tReturns: \n"
 
 	for _, parameter := range a.Returns {
 		returnString += parameter.String()
@@ -57,7 +57,7 @@ func (o Object) String() string {
 		"\tRef: " + o.Ref + "\n" +
 		"\tDescription: " + o.Description + "\n"
 
-	returnString += "\tProperties: \n"
+	returnString += "\n\tProperties: \n"
 
 	for _, parameter := range o.Properties {
 		returnString += parameter.String()
