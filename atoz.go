@@ -68,7 +68,7 @@ func (o Object) String() string {
 
 type KeyValue struct {
 	Name        string     `json:"name"`
-	Flag        string     `json:"name"`
+	Flag        string     `json:"flag"`
 	Type        string     `json:"type"`
 	Limit       int64      `json:"limit"`
 	Description string     `json:"description"`
