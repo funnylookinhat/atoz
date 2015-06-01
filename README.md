@@ -2,6 +2,8 @@
 
 **See: [http://en.memory-alpha.org/wiki/Atoz](http://en.memory-alpha.org/wiki/Atoz)**
 
+[![Build Status](https://travis-ci.org/funnylookinhat/atoz.svg)](https://travis-ci.org/funnylookinhat/atoz)
+
 Atoz is the result of my looking for a documentation tool that reflects the way 
 I believe REST APIs should be designed: JSON in and JSON out.  More specifically,
 your code should work with your application in nearly the exact same way that 
