@@ -1,0 +1,9 @@
+language: go
+go:
+  - 1.4.2
+  - tip
+install:
+  - go get github.com/funnylookinhat/atoz
+notifications:
+  email: false
+script: go test ./ -v
