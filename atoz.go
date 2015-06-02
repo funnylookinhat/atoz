@@ -131,6 +131,8 @@ func GenerateApiSpec(files []string) (ApiSpec, error) {
 		for _, parseGroupFile := range parseGroupsFiles {
 			groups = append(groups, parseGroupFile)
 		}
+		
+		file.Close()
 	}
 
 	definitionGroups, err = GetDefinitionGroups(groups)
