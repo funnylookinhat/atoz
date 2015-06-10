@@ -35,6 +35,11 @@ var testParseLineTypeCases = []testParseLineTypeCase{
 		false,
 	},
 	{
+		"@note Note",
+		"note",
+		false,
+	},
+	{
 		"@include Namespace",
 		"include",
 		false,
@@ -170,6 +175,11 @@ var testParseLineStringCases = []testParseLineStringCase{
 	{
 		"@description This is a really short description.",
 		"This is a really short description.",
+		false,
+	},
+	{
+		"@note This is a note regarding an action.",
+		"This is a note regarding an action.",
 		false,
 	},
 	{
@@ -484,6 +494,7 @@ int main(void)
  * @ref /Defs/BaseResult
  * @success {Boolean} success A boolean to show whether or not the request was successful.
  * @failure {String} error An error message describing what went wrong.
+ * @note The failure field will only have a value if success is false.
  * ---ATOZEND---
  */
 
@@ -546,6 +557,7 @@ int main(void)
 				" * @ref /Defs/BaseResult",
 				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
 				" * @failure {String} error An error message describing what went wrong.",
+				" * @note The failure field will only have a value if success is false.",
 				" * ---ATOZEND---",
 			},
 			{
@@ -580,6 +592,7 @@ int main(void)
 			"/Defs/BaseResult": []string{
 				" * @success {Boolean} success A boolean to show whether or not the request was successful.",
 				" * @failure {String} error An error message describing what went wrong.",
+				" * @note The failure field will only have a value if success is false.",
 			},
 		},
 		map[string][]string{
@@ -1079,7 +1092,9 @@ var testGenerateActionCases = []testGenerateActionCase{
 			" * @uri /User/Lookup",
 			" * @description Get the information for a user.",
 			" * @include /Defs/Authorization",
+			" * @note Authorization must have user-read permission.",
 			" * @parameter {Integer} id The ID of the user.",
+			" * @note If the Authorization is not an admin, id MUST match the Authorization's id.",
 			" * @include /Defs/BaseResult",
 			" * @success {#/Application/User#} user The user.",
 		},
@@ -1099,6 +1114,10 @@ var testGenerateActionCases = []testGenerateActionCase{
 			"/MyApp/User/Lookup",
 			"/User/Lookup",
 			"Get the information for a user.",
+			[]string{
+				"Authorization must have user-read permission.",
+				"If the Authorization is not an admin, id MUST match the Authorization's id.",
+			},
 			[]KeyValue{
 				KeyValue{
 					"auth",
@@ -1200,6 +1219,7 @@ var testGenerateObjectCases = []testGenerateObjectCase{
 			" * @name User",
 			" * @ref /Application/User",
 			" * @description A user in the application.",
+			" * @note Users can be customers or admins.",
 			" * @property {Integer} id",
 			" * @property {String} name",
 			" * @property {String,254} email",
@@ -1210,6 +1230,9 @@ var testGenerateObjectCases = []testGenerateObjectCase{
 			"User",
 			"/Application/User",
 			"A user in the application.",
+			[]string{
+				"Users can be customers or admins.",
+			},
 			[]KeyValue{
 				KeyValue{
 					"email",

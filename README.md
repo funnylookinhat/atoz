@@ -158,6 +158,7 @@ Actions support the following attributes:
 - `@ref Value` A canonical reference.
 - `@uri Value` The expected URI for the api-end point over HTTP.
 - `@description Value` 
+- `@note Value` You can assign multiple notes to an action to help describe how to use it.
 - `@parameter {Type,Limit} Object.Space Description` A parameter that can be sent to the action.
 - `@required {Type,Limit} Object.Space Description` A required parameter.
 - `@optional {Type,Limit} Object.Space Description` An optional parameter.
@@ -173,6 +174,7 @@ similarly to Actions, but they offer fewer fields.
 - `@name Value` A title for the object.
 - `@ref Value` A canonical reference.
 - `@description Value`
+- `@note Value` You can assign multiple notes to an object to help describe how to interpret it.
 - `@property {Type,Limit} Object.Space Description` Any key/value stored in this object.
 
 ## Definitions
@@ -227,6 +229,7 @@ single string.
 - `@ref` 
 - `@uri` 
 - `@description` 
+- `@note`
 
 Any of the following are perfectly valid:
 
@@ -236,6 +239,7 @@ Any of the following are perfectly valid:
 objects, actions, and definitions as a key - so including spaces, while 
 functional, might not be the best decision.
 - `@description A **markdown** string of text to ~~print~~ parse later.`
+- `@note This is going to be **deprecated** soon - so don't get too comfortable with it`
 
 Not that Atoz will not do any further parsing of text (i.e. support for 
 markdown), but you could simply parse it further when generating HTML or 

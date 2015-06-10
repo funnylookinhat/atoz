@@ -20,6 +20,7 @@ type Action struct {
 	Ref         string     `json:"ref"`
 	Uri         string     `json:"uri"`
 	Description string     `json:"description"`
+	Notes       []string   `json:"notes"`
 	Parameters  []KeyValue `json:"parameters"`
 	Returns     []KeyValue `json:"returns"`
 }
@@ -29,6 +30,12 @@ func (a Action) String() string {
 		"\tRef: " + a.Ref + "\n" +
 		"\tUri: " + a.Uri + "\n" +
 		"\tDescription: " + a.Description + "\n"
+
+	returnString += "\n\tNotes: \n"
+
+	for _, note := range a.Notes {
+		returnString += "\t\t" + note + "\n"
+	}
 
 	returnString += "\n\tParameters: \n"
 
@@ -49,6 +56,7 @@ type Object struct {
 	Name        string     `json:"name"`
 	Ref         string     `json:"ref"`
 	Description string     `json:"description"`
+	Notes       []string   `json:"notes"`
 	Properties  []KeyValue `json:"properties"`
 }
 
@@ -56,6 +64,12 @@ func (o Object) String() string {
 	returnString := "\tName: " + o.Name + "\n" +
 		"\tRef: " + o.Ref + "\n" +
 		"\tDescription: " + o.Description + "\n"
+
+	returnString += "\n\tNotes: \n"
+
+	for _, note := range o.Notes {
+		returnString += "\t\t" + note + "\n"
+	}
 
 	returnString += "\n\tProperties: \n"
 
@@ -131,7 +145,7 @@ func GenerateApiSpec(files []string) (ApiSpec, error) {
 		for _, parseGroupFile := range parseGroupsFiles {
 			groups = append(groups, parseGroupFile)
 		}
-		
+
 		file.Close()
 	}
 
@@ -229,6 +243,7 @@ func ParseLineType(line string) (string, error) {
 		"@ref":         "ref",
 		"@uri":         "uri",
 		"@description": "description",
+		"@note":        "note",
 		"@include":     "include",
 		"@parameter":   "parameter",
 		"@required":    "parameter",
@@ -515,6 +530,14 @@ func GenerateObject(group []string, definitions map[string][]string) (Object, er
 			if err != nil {
 				return returnObject, err
 			}
+		} else if lineType == "note" {
+			note, err := ParseLineString(line)
+
+			if err != nil {
+				return returnObject, err
+			}
+
+			returnObject.Notes = append(returnObject.Notes, note)
 		} else if lineType == "include" {
 			defRef, err = ParseLineString(line)
 
@@ -577,6 +600,14 @@ func GenerateAction(group []string, definitions map[string][]string) (Action, er
 			if err != nil {
 				return returnAction, err
 			}
+		} else if lineType == "note" {
+			note, err := ParseLineString(line)
+
+			if err != nil {
+				return returnAction, err
+			}
+
+			returnAction.Notes = append(returnAction.Notes, note)
 		} else if lineType == "include" {
 			defRef, err = ParseLineString(line)
 
