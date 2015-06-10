@@ -1094,6 +1094,7 @@ var testGenerateActionCases = []testGenerateActionCase{
 			" * @include /Defs/Authorization",
 			" * @note Authorization must have user-read permission.",
 			" * @parameter {Integer} id The ID of the user.",
+			" * @note If the Authorization is not an admin, id MUST match the Authorization's id.",
 			" * @include /Defs/BaseResult",
 			" * @success {#/Application/User#} user The user.",
 		},
@@ -1115,6 +1116,7 @@ var testGenerateActionCases = []testGenerateActionCase{
 			"Get the information for a user.",
 			[]string{
 				"Authorization must have user-read permission.",
+				"If the Authorization is not an admin, id MUST match the Authorization's id.",
 			},
 			[]KeyValue{
 				KeyValue{
