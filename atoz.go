@@ -569,7 +569,8 @@ func GenerateAction(group []string, definitions map[string][]string) (Action, er
 	var lineType string
 	var defRef string
 
-	for i, line := range group {
+	for i := 0; i < len(group); i++ {
+		line := group[i]
 		lineType, err = ParseLineType(line)
 
 		if err != nil {
@@ -619,7 +620,8 @@ func GenerateAction(group []string, definitions map[string][]string) (Action, er
 				return returnAction, fmt.Errorf("Definition not found: %s", defRef)
 			}
 
-			group = append(group[:i], append(definitions[defRef], group[i:]...)...)
+			group = append(group[:i], group[i:]...)
+			group = append(group, definitions[defRef]...)
 		}
 	}
 
