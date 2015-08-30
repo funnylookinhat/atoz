@@ -7,8 +7,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
+
+var PATH_SEPARATOR string = RuneToAscii(os.PathSeparator)
 
 func main() {
 	var dir string
@@ -64,7 +67,7 @@ func findFiles(dir string) ([]string, error) {
 	var dirFiles []os.FileInfo
 	var subDirFiles []string
 
-	if dir[len(dir)-1:] == "/" {
+	if dir[len(dir)-1:] == PATH_SEPARATOR {
 		dir = dir[:len(dir)-1]
 	}
 
@@ -77,9 +80,9 @@ func findFiles(dir string) ([]string, error) {
 	files := make([]string, 0)
 
 	for _, file := range dirFiles {
-		if !isHidden(dir + "/" + file.Name()) {
+		if !isHidden(dir + PATH_SEPARATOR + file.Name()) {
 			if file.IsDir() {
-				subDirFiles, err = findFiles(dir + "/" + file.Name())
+				subDirFiles, err = findFiles(dir + PATH_SEPARATOR + file.Name())
 
 				if err != nil {
 					return nil, err
@@ -91,7 +94,7 @@ func findFiles(dir string) ([]string, error) {
 					}
 				}
 			} else {
-				files = append(files, dir+"/"+file.Name())
+				files = append(files, dir+PATH_SEPARATOR+file.Name())
 			}
 		}
 	}
@@ -100,11 +103,29 @@ func findFiles(dir string) ([]string, error) {
 }
 
 func isHidden(path string) bool {
-	for _, part := range strings.Split(path, string(os.PathSeparator)) {
-		if part[0:1] == "." && len(part) > 1 {
+	if path[0:1] == PATH_SEPARATOR {
+		// If this is an absolute path.
+		path = path[1:]
+	}
+
+	for _, part := range strings.Split(path, string(PATH_SEPARATOR)) {
+		if path[0:2] == "."+PATH_SEPARATOR {
+			// Nada
+		} else if path[0:3] == ".."+PATH_SEPARATOR {
+			// Nada
+		} else if part[0:1] == "." && len(part) > 1 {
 			return true
 		}
 	}
 
 	return false
+}
+
+// Pretty dang useful - http://stackoverflow.com/a/16684343
+func RuneToAscii(r rune) string {
+	if r < 128 {
+		return string(r)
+	} else {
+		return "\\u" + strconv.FormatInt(int64(r), 16)
+	}
 }
