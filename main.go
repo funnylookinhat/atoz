@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -64,59 +65,33 @@ func main() {
 
 func findFiles(dir string) ([]string, error) {
 	var err error
-	var dirFiles []os.FileInfo
-	var subDirFiles []string
-
-	if dir[len(dir)-1:] == PATH_SEPARATOR {
-		dir = dir[:len(dir)-1]
-	}
-
-	dirFiles, err = ioutil.ReadDir(dir)
-
-	if err != nil {
-		return nil, err
-	}
-
 	files := make([]string, 0)
 
-	for _, file := range dirFiles {
-		if !isHidden(dir + PATH_SEPARATOR + file.Name()) {
-			if file.IsDir() {
-				subDirFiles, err = findFiles(dir + PATH_SEPARATOR + file.Name())
-
-				if err != nil {
-					return nil, err
-				}
-
-				if len(subDirFiles) > 0 {
-					for _, subDirFile := range subDirFiles {
-						files = append(files, subDirFile)
-					}
-				}
-			} else {
-				files = append(files, dir+PATH_SEPARATOR+file.Name())
-			}
-		} else {
-			log.Printf("HIDDEN: %s \n", file.Name())
+	err = filepath.Walk(dir, func(path string, file os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
-	}
 
-	return files, nil
+		if !isHidden(path) && !file.IsDir() {
+			files = append(files, path)
+		}
+
+		return nil
+	})
+
+	return files, err
 }
 
 func isHidden(path string) bool {
-	if path[0:1] == PATH_SEPARATOR {
-		// If this is an absolute path.
-		path = path[1:]
-	}
-
 	for i, part := range strings.Split(path, string(PATH_SEPARATOR)) {
-		if part[0:1] == "." && i == 0 {
-			// Nada
-		} else if part[0:2] == ".." {
-			// Nada
-		} else if part[0:1] == "." && len(part) > 1 {
-			return true
+		if len(part) > 0 {
+			if part[0:1] == "." && i == 0 {
+				// Nada
+			} else if len(part) > 1 && part[0:2] == ".." {
+				// Nada
+			} else if part[0:1] == "." && len(part) > 1 {
+				return true
+			}
 		}
 	}
 
