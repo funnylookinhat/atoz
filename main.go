@@ -96,6 +96,8 @@ func findFiles(dir string) ([]string, error) {
 			} else {
 				files = append(files, dir+PATH_SEPARATOR+file.Name())
 			}
+		} else {
+			log.Printf("HIDDEN: %s \n", file.Name())
 		}
 	}
 
@@ -108,10 +110,10 @@ func isHidden(path string) bool {
 		path = path[1:]
 	}
 
-	for _, part := range strings.Split(path, string(PATH_SEPARATOR)) {
-		if path[0:2] == "."+PATH_SEPARATOR {
+	for i, part := range strings.Split(path, string(PATH_SEPARATOR)) {
+		if part[0:1] == "." && i == 0 {
 			// Nada
-		} else if path[0:3] == ".."+PATH_SEPARATOR {
+		} else if part[0:2] == ".." {
 			// Nada
 		} else if part[0:1] == "." && len(part) > 1 {
 			return true
