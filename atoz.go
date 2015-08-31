@@ -106,11 +106,23 @@ func (k KeyValue) String() string {
 	return returnString
 }
 
-type ByName []KeyValue
+type KeyValueByName []KeyValue
 
-func (a ByName) Len() int           { return len(a) }
-func (a ByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
+func (a KeyValueByName) Len() int           { return len(a) }
+func (a KeyValueByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a KeyValueByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
+
+type ActionByName []Action
+
+func (a ActionByName) Len() int           { return len(a) }
+func (a ActionByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ActionByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
+
+type ObjectByName []Object
+
+func (a ObjectByName) Len() int           { return len(a) }
+func (a ObjectByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ObjectByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 const (
 	startDefinition = "---ATOZDEF---"
@@ -195,6 +207,9 @@ func GenerateApiSpec(files []string) (ApiSpec, error) {
 
 		apiSpec.Objects = append(apiSpec.Objects, object)
 	}
+
+	sort.Stable(ActionByName(apiSpec.Actions))
+	sort.Stable(ObjectByName(apiSpec.Objects))
 
 	return apiSpec, nil
 }
@@ -555,6 +570,8 @@ func GenerateObject(group []string, definitions map[string][]string) (Object, er
 
 	returnObject.Properties, err = GenerateKeyValues("property", group, "")
 
+	SortKeyValues(returnObject.Properties)
+
 	if err != nil {
 		return returnObject, err
 	}
@@ -628,6 +645,9 @@ func GenerateAction(group []string, definitions map[string][]string) (Action, er
 	returnAction.Parameters, err = GenerateKeyValues("parameter", group, "")
 	returnAction.Returns, err = GenerateKeyValues("return", group, "")
 
+	SortKeyValues(returnAction.Parameters)
+	SortKeyValues(returnAction.Returns)
+
 	if err != nil {
 		return returnAction, err
 	}
@@ -696,9 +716,15 @@ func GenerateKeyValues(keyValueType string, lines []string, objectspace string) 
 		}
 	}
 
-	sort.Sort(ByName(keyValues))
-
 	return keyValues, nil
+}
+
+func SortKeyValues(keyValues []KeyValue) {
+	for i, _ := range keyValues {
+		SortKeyValues(keyValues[i].Children)
+	}
+
+	sort.Stable(KeyValueByName(keyValues))
 }
 
 func GetDefinitionGroups(groups [][]string) (map[string][]string, error) {
